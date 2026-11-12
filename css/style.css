@@ -1,0 +1,280 @@
+/* 색은 변수로 — 2단계 테마 기능 때 여기만 바꾸면 된다 */
+:root {
+  --bg: #FAF6EC;
+  --card: #FFFFFF;
+  --text: #2B3242;
+  --text-sub: #5F6676;
+  --line: #ECE4D0;
+  --selected: #F1E5BF;
+  --overdue-bg: #F7ECE5;
+  --overdue-text: #9B4428;
+  --work-bg: #E6EDF5;
+  --work-text: #36577D;
+  --side-bg: #E4EFE8;
+  --side-text: #3A664D;
+  --study-bg: #F4E8DF;
+  --study-text: #845033;
+  --accent: #2B3242;
+
+  --font-body: "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-num: "Space Grotesk", var(--font-body);
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+button, input, select { font: inherit; color: inherit; }
+
+.num { font-family: var(--font-num); }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgba(43, 50, 66, 0.06);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 32px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* ── 폴더 트리 ── */
+#folder-tree { position: sticky; top: 40px; align-self: start; }
+
+.tree-title {
+  margin: 0 0 8px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-sub);
+}
+
+.tree, .tree-sub { list-style: none; margin: 0; padding: 0; }
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+.tree-row:hover { background: rgba(241, 229, 191, 0.45); }
+.tree-row.selected { background: var(--selected); }
+.tree-row.child { padding-left: 20px; }
+
+.tree-toggle {
+  width: 24px;
+  height: 32px;
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--text-sub);
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.tree-toggle.open { transform: rotate(90deg); }
+.tree-toggle.hidden { visibility: hidden; }
+
+.tree-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-row.selected .tree-name { font-weight: 600; }
+
+.tree-count {
+  padding-right: 10px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dot.c-work { background: var(--work-text); }
+.dot.c-side { background: var(--side-text); }
+.dot.c-study { background: var(--study-text); }
+
+/* ── 투두 패널 ── */
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.panel-head h1 { margin: 0; font-size: 24px; font-weight: 600; }
+#panel-count { font-size: 18px; color: var(--text-sub); }
+
+#todo-form { padding: 14px; margin-bottom: 28px; }
+
+#todo-text {
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font-size: 16px;
+  outline: none;
+}
+#todo-text:focus { border-bottom-color: var(--text); }
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.form-row select,
+.form-row input[type="date"] {
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.form-row input[type="date"]:disabled { opacity: 0.4; }
+
+.repeat-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.form-row button[type="submit"] {
+  margin-left: auto;
+  height: 34px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--card);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ── 그룹 ── */
+.group { margin-bottom: 28px; }
+
+.group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 10px 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+.group-overdue .group-title { color: var(--overdue-text); }
+.group-count { font-size: 13px; font-weight: 500; }
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.todo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.todo.overdue { background: var(--overdue-bg); }
+
+.todo input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  flex: none;
+  accent-color: var(--text);
+  cursor: pointer;
+}
+
+.todo-body { flex: 1; min-width: 0; }
+.todo-text { overflow-wrap: anywhere; }
+.todo.done .todo-text { text-decoration: line-through; color: var(--text-sub); }
+.todo.done { opacity: 0.65; }
+
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--text-sub);
+}
+.todo.overdue .meta-due { color: var(--overdue-text); font-weight: 600; }
+
+.tag { padding: 1px 8px; border-radius: 999px; }
+.tag.c-work { background: var(--work-bg); color: var(--work-text); }
+.tag.c-side { background: var(--side-bg); color: var(--side-text); }
+.tag.c-study { background: var(--study-bg); color: var(--study-text); }
+
+.todo-delete {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-sub);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+.todo:hover .todo-delete,
+.todo-delete:focus-visible { opacity: 1; }
+.todo-delete:hover { background: rgba(43, 50, 66, 0.07); }
+
+.empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--text-sub);
+}
+
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--card);
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; gap: 20px; padding: 20px 16px; }
+  #folder-tree { position: static; }
+  .todo-delete { opacity: 1; }
+}
