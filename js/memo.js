@@ -14,7 +14,7 @@ function memoLabel(ms) {
 
 export function renderMemo(container, { memo, onCheckout }) {
   container.replaceChildren();
-  container.classList.toggle("empty", !memo);
+  container.classList.toggle("memo-empty", !memo);
 
   const icon = document.createElement("span");
   icon.className = "memo-icon";

@@ -23,6 +23,7 @@
         </div>
       </div>
       <div class="hero-right">
+        <div id="ddays" class="ddays" aria-label="D-day"></div>
         <time id="clock" class="clock num"></time>
         <button id="settings-toggle" class="icon-btn" type="button" aria-label="꾸미기" aria-expanded="false" aria-controls="settings">
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg>
@@ -89,6 +90,20 @@
           <div class="bar"><div id="progress-bar" class="bar-fill"></div></div>
           <ul id="progress-stats" class="progress-stats"></ul>
         </section>
+
+        <section class="card grass" aria-labelledby="grass-title">
+          <div class="grass-head">
+            <h2 id="grass-title">잔디</h2>
+            <span id="grass-streak" class="grass-streak"></span>
+          </div>
+          <div id="grass-grid" class="grass-grid" role="img"></div>
+          <div class="grass-foot">
+            <span>최근 18주</span>
+            <span class="grass-legend" aria-hidden="true">적음
+              <span class="grass-cell lv-0"></span><span class="grass-cell lv-1"></span><span class="grass-cell lv-2"></span><span class="grass-cell lv-3"></span><span class="grass-cell lv-4"></span>
+              많음</span>
+          </div>
+        </section>
       </aside>
     </div>
   </div>
@@ -139,6 +154,25 @@
       <div class="dialog-actions">
         <button type="button" class="ghost-btn" data-close>취소</button>
         <button type="submit" class="primary-btn">남기기</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dday-dialog" class="dialog" aria-labelledby="dday-dialog-title">
+    <form id="dday-form" autocomplete="off">
+      <h2 id="dday-dialog-title">D-day 추가</h2>
+      <label class="dialog-field">
+        <span>이름</span>
+        <input name="title" type="text" maxlength="20" placeholder="예: 오픽 시험" required>
+      </label>
+      <label class="dialog-field">
+        <span>날짜</span>
+        <input name="date" type="date" required>
+      </label>
+      <div class="dialog-actions">
+        <button id="dday-delete" type="button" class="danger-btn">삭제</button>
+        <button type="button" class="ghost-btn" data-close>취소</button>
+        <button type="submit" class="primary-btn">저장</button>
       </div>
     </form>
   </dialog>

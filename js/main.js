@@ -11,6 +11,8 @@ import { renderHeader, startClock } from "./header.js";
 import { renderCalendar } from "./calendar.js";
 import { createCard, isSentToday, renderBoard } from "./board.js";
 import { renderMemo } from "./memo.js";
+import { createDday, renderDdays } from "./dday.js";
+import { recordDone, renderGrass, seedHistory, streak } from "./history.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
 
 let folders = load("folders", null) ?? DEFAULT_FOLDERS;
@@ -20,6 +22,12 @@ let todos = load("todos", []);
 if (migrateRepeats(todos)) save("todos", todos);
 let board = load("board", []);
 let memo = load("memo", null);       // { text, writtenAt }
+let ddays = load("ddays", []);
+let history = load("history", null);   // 날짜별 완료 개수 { "2026-11-12": 3 }
+if (!history) {
+  history = seedHistory(todos);         // 처음엔 남아 있는 완료 기록으로 채운다
+  save("history", history);
+}
 let expanded = load("expandedFolders", topFolders(folders).map(f => f.id));
 const settings = { theme: "sunny", name: "", ...load("settings", {}) };
 let selectedFolder = "all";
@@ -29,6 +37,7 @@ const calView = { year: new Date().getFullYear(), month: new Date().getMonth() }
 const deletedStack = [];    // Ctrl+Z 되돌리기용 { todo, index }
 let editingCardId = null;   // 작업 카드 창: 수정 중인 카드 (새 카드면 null)
 let cardPickPath = [];
+let editingDdayId = null;
 
 const $ = id => document.getElementById(id);
 const nav = $("folder-tree");
@@ -47,6 +56,8 @@ const cardDialog = $("card-dialog");
 const cardForm = $("card-form");
 const memoDialog = $("memo-dialog");
 const memoForm = $("memo-form");
+const ddayDialog = $("dday-dialog");
+const ddayForm = $("dday-form");
 
 function saveTodos() {
   save("todos", todos);
@@ -239,8 +250,12 @@ function renderMain() {
     selectedId: selectedFolder,
     onToggleDone: id => {
       const todo = todos.find(t => t.id === id);
+      const prevDoneAt = todo.doneAt;
       todo.done = !todo.done;
       todo.doneAt = todo.done ? todayStr() : null;
+      // 잔디: 완료한 날 +1, 취소하면 그때 완료했던 날 -1
+      history = todo.done ? recordDone(history, todo.doneAt, 1) : recordDone(history, prevDoneAt, -1);
+      save("history", history);
       saveTodos();
       render();
     },
@@ -257,8 +272,55 @@ function renderMain() {
   renderBoardSection();
   renderCal();
   renderProgress();
+  renderHistory();
+  renderDdayChips();
   updateHeader();
 }
+
+function renderHistory() {
+  renderGrass($("grass-grid"), history);
+  const days = streak(history);
+  $("grass-streak").textContent = days ? `${days}일 연속` : "";
+}
+
+// ── D-day ──
+
+function renderDdayChips() {
+  renderDdays($("ddays"), { ddays, on: { edit: openDdayDialog } });
+}
+
+function openDdayDialog(id) {
+  const dday = ddays.find(d => d.id === id);
+  editingDdayId = dday ? dday.id : null;
+  $("dday-dialog-title").textContent = dday ? "D-day 수정" : "D-day 추가";
+  $("dday-delete").hidden = !dday;
+  ddayForm.elements.title.value = dday?.title ?? "";
+  ddayForm.elements.date.value = dday?.date ?? "";
+  ddayDialog.showModal();
+  ddayForm.elements.title.focus();
+}
+
+ddayForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const title = ddayForm.elements.title.value.trim();
+  const date = ddayForm.elements.date.value;
+  if (!title || !date) return;
+  const dday = ddays.find(d => d.id === editingDdayId);
+  if (dday) Object.assign(dday, { title, date });
+  else ddays.push(createDday({ title, date }));
+  save("ddays", ddays);
+  ddayDialog.close();
+  renderDdayChips();
+});
+
+$("dday-delete").addEventListener("click", () => {
+  const dday = ddays.find(d => d.id === editingDdayId);
+  if (!dday || !confirm(`'${dday.title}' D-day를 삭제할까요?`)) return;
+  ddays = ddays.filter(d => d.id !== dday.id);
+  save("ddays", ddays);
+  ddayDialog.close();
+  renderDdayChips();
+});
 
 function renderBoardSection() {
   renderMemo($("memo"), { memo, onCheckout: openMemoDialog });

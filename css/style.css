@@ -17,6 +17,9 @@
   --track: #F1EAD6;
   --warn: #F7ECE5;
   --warn-text: #9B4428;
+  --dday: #93552C;
+  --streak: #3D7553;
+  --grass-0: #ECEBE4;
   color-scheme: light;
 }
 
@@ -37,6 +40,9 @@
   --track: #E3EBF3;
   --warn: #F7ECE5;
   --warn-text: #9B4428;
+  --dday: #3B5D86;
+  --streak: #3D7553;
+  --grass-0: #E9EDF1;
   color-scheme: light;
 }
 
@@ -57,6 +63,9 @@
   --track: #E9E5F1;
   --warn: #F7ECE5;
   --warn-text: #9B4428;
+  --dday: #5B4C88;
+  --streak: #3D7553;
+  --grass-0: #EDEBF1;
   color-scheme: light;
 }
 
@@ -77,6 +86,9 @@
   --track: #F1E3DC;
   --warn: #F5E6DE;
   --warn-text: #933E24;
+  --dday: #94492F;
+  --streak: #3D7553;
+  --grass-0: #F1EBE7;
   color-scheme: light;
 }
 
@@ -97,12 +109,19 @@
   --track: #2E3546;
   --warn: #3A2F31;
   --warn-text: #E3A98F;
+  --dday: #D6C283;
+  --streak: #8CC7A1;
+  --grass-0: #2E3546;
   color-scheme: dark;
 }
 
 /* 테마와 상관없는 값 */
 :root {
   --done: #5E8F70;
+  --grass-1: #D2E4D7;
+  --grass-2: #A8CBB3;
+  --grass-3: #76A688;
+  --grass-4: #4A7C5E;
   --work-bg: #E6EDF5;
   --work-text: #36577D;
   --work-dot: #8EA9C6;
@@ -206,7 +225,41 @@ h1, h2 { margin: 0; }
 .name-input::placeholder { color: inherit; opacity: 0.4; }
 .name-input:focus { border-bottom-color: var(--sun); }
 
-.hero-right { display: flex; align-items: center; gap: 20px; }
+.hero-right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 20px; }
+
+/* D-day 칩 */
+.ddays { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.dday-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+.dday-chip:hover { box-shadow: 0 0 0 2px var(--dday) inset; }
+.dday-num { font-size: 15px; font-weight: 700; color: var(--dday); }
+.dday-chip.past { opacity: 0.6; }
+
+.dday-add {
+  width: 40px;
+  height: 40px;
+  border: 2px dashed currentColor;
+  border-radius: 999px;
+  background: none;
+  color: var(--hero-text);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.dday-add:hover { opacity: 1; }
 
 .clock {
   font-size: 64px;
@@ -302,7 +355,7 @@ h1, h2 { margin: 0; }
 .memo-body { flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .memo-label { font-size: 13px; color: var(--muted); }
 .memo-text { font-size: 18px; overflow-wrap: anywhere; }
-.memo.empty .memo-label { font-size: 15px; }
+.memo.memo-empty .memo-label { font-size: 15px; }
 
 .board-head {
   display: flex;
@@ -319,7 +372,7 @@ h1, h2 { margin: 0; }
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
-.board-empty { margin: 0; padding: 8px 0; color: var(--muted); }
+.board-empty { grid-column: 1 / -1; margin: 0; padding: 8px 0; color: var(--muted); }
 
 .board-card {
   display: flex;
@@ -386,6 +439,7 @@ h1, h2 { margin: 0; }
 .dialog-field small { font-weight: 400; }
 .dialog-field output { margin-left: 4px; color: var(--text); }
 .dialog-field input[type="text"],
+.dialog-field input[type="date"],
 .dialog-field select {
   min-height: 40px;
   padding: 0 10px;
@@ -876,6 +930,40 @@ h1, h2 { margin: 0; }
   font-size: 14px;
 }
 .progress-stat, .progress-empty { color: var(--muted); }
+
+/* ── 오른쪽: 잔디 ── */
+.grass { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.grass-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.grass-head h2 { font-size: 18px; }
+.grass-streak { font-size: 14px; font-weight: 700; color: var(--streak); }
+
+/* 7줄(일~토) × 18주, 열 방향으로 채운다. 칸 크기는 카드 폭에 맞춰 늘어난다 */
+.grass-grid {
+  display: grid;
+  grid-template-rows: repeat(7, auto);
+  grid-template-columns: repeat(18, 1fr);
+  grid-auto-flow: column;
+  gap: 3px;
+}
+
+.grass-cell { aspect-ratio: 1; border-radius: 3px; background: var(--grass-0); }
+.grass-cell.lv-1 { background: var(--grass-1); }
+.grass-cell.lv-2 { background: var(--grass-2); }
+.grass-cell.lv-3 { background: var(--grass-3); }
+.grass-cell.lv-4 { background: var(--grass-4); }
+.grass-cell.future { background: none; }
+
+.grass-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.grass-legend { display: flex; align-items: center; gap: 3px; }
+.grass-legend .grass-cell { width: 11px; }
 
 #toast {
   position: fixed;
