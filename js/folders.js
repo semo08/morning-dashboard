@@ -47,7 +47,7 @@ export function inFolder(todo, selectedId, folders) {
 export function renderFolderTree(nav, { folders, selectedId, expanded, countFor, onSelect, onToggle }) {
   nav.replaceChildren();
 
-  const title = document.createElement("p");
+  const title = document.createElement("h2");
   title.className = "tree-title";
   title.textContent = "폴더";
   nav.append(title);
@@ -74,13 +74,13 @@ export function renderFolderTree(nav, { folders, selectedId, expanded, countFor,
   function folderItem(folder, { isTop = false, hasChildren = false, isOpen = false }) {
     const li = document.createElement("li");
     const row = document.createElement("div");
-    row.className = "tree-row" + (folder.id === selectedId ? " selected" : "") + (isTop ? "" : " child");
+    row.className = "tree-row" + (folder.id === selectedId ? " selected" : "") + (isTop ? " top" : "");
 
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "tree-toggle" + (isOpen ? " open" : "");
-    toggle.textContent = "▸";
-    toggle.setAttribute("aria-label", isOpen ? "접기" : "펼치기");
+    toggle.innerHTML = `<svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5L7.5 6 4 9.5"/></svg>`;
+    toggle.setAttribute("aria-label", (isOpen ? "접기: " : "펼치기: ") + folder.name);
     toggle.setAttribute("aria-expanded", String(isOpen));
     if (hasChildren) {
       toggle.addEventListener("click", () => onToggle(folder.id));
@@ -92,21 +92,27 @@ export function renderFolderTree(nav, { folders, selectedId, expanded, countFor,
     const name = document.createElement("button");
     name.type = "button";
     name.className = "tree-name";
+    const label = document.createElement("span");
+    label.className = "tree-label";
     const color = folder.id === "all" ? null : folderColor(folder.id, folders);
     if (isTop && color) {
       const dot = document.createElement("span");
       dot.className = `dot c-${color}`;
-      name.append(dot);
+      label.append(dot);
     }
-    name.append(folder.name);
-    name.addEventListener("click", () => onSelect(folder.id));
+    label.append(folder.name);
 
     const count = document.createElement("span");
     count.className = "tree-count num";
     const n = countFor(folder.id);
     count.textContent = n > 0 ? n : "";
 
-    row.append(toggle, name, count);
+    name.append(label, count);
+    name.addEventListener("click", () => onSelect(folder.id));
+
+    // 하위 폴더는 들여쓴 목록 안에 있어서 펼치기 버튼 자리가 필요 없다
+    if (isTop) row.append(toggle);
+    row.append(name);
     li.append(row);
     return li;
   }

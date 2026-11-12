@@ -79,6 +79,11 @@ export function isVisible(todo) {
   return !todo.done || todo.repeat || todo.doneAt === todayStr();
 }
 
+// 오늘 챙겨야 할 투두 = 지난 마감 + 오늘 그룹 (헤더의 남은 개수, 진행률에 쓴다)
+export function todayItems(todos) {
+  return todos.filter(t => isVisible(t) && ["overdue", "today"].includes(getGroup(t)));
+}
+
 function compareTodos(a, b) {
   if (a.done !== b.done) return a.done ? 1 : -1;
   if (a.due !== b.due) {
@@ -111,7 +116,7 @@ export function renderTodos(container, { todos, folders, selectedId, onToggleDon
   if (visible.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty";
-    empty.textContent = "할 일이 없어요. 위에서 하나 추가해 보세요.";
+    empty.textContent = "이 폴더에는 할 일이 없어";
     container.append(empty);
     return;
   }
@@ -128,7 +133,7 @@ export function renderTodos(container, { todos, folders, selectedId, onToggleDon
     const left = items.filter(t => !t.done).length;
     head.innerHTML = `<span></span><span class="num group-count"></span>`;
     head.children[0].textContent = group.title;
-    head.children[1].textContent = left;
+    head.children[1].textContent = `${left}개`;
     section.append(head);
 
     const list = document.createElement("ul");
@@ -140,12 +145,12 @@ export function renderTodos(container, { todos, folders, selectedId, onToggleDon
 
   function todoItem(todo, groupId) {
     const li = document.createElement("li");
-    li.className = "todo card" + (todo.done ? " done" : "") + (groupId === "overdue" && !todo.done ? " overdue" : "");
+    li.className = "todo" +(todo.done ? " done" : "") + (groupId === "overdue" && !todo.done ? " overdue" : "");
 
     const check = document.createElement("input");
     check.type = "checkbox";
     check.checked = todo.done;
-    check.setAttribute("aria-label", "완료");
+    check.setAttribute("aria-label", (todo.done ? "완료 취소: " : "완료: ") + todo.text);
     check.addEventListener("change", () => onToggleDone(todo.id));
 
     const body = document.createElement("div");

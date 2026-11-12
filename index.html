@@ -4,35 +4,88 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Morning Dashboard</title>
+  <!-- 저장된 테마를 먼저 적용해서 깜빡임을 막는다 (확장 CSP 때문에 인라인 대신 파일) -->
+  <script src="js/theme-init.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="app">
-    <nav id="folder-tree" aria-label="폴더"></nav>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-left">
+        <svg class="sun" aria-hidden="true" width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="13" fill="currentColor"/>
+          <g stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M32 6v7M32 51v7M6 32h7M51 32h7M13.6 13.6l5 5M45.4 45.4l5 5M13.6 50.4l5-5M45.4 18.6l5-5"/></g>
+        </svg>
+        <div class="hero-text">
+          <span id="today-date" class="hero-date"></span>
+          <h1 id="greeting"></h1>
+          <span>오늘 할 일 <strong id="today-left">0개</strong> 남았어</span>
+        </div>
+      </div>
+      <div class="hero-right">
+        <time id="clock" class="clock num"></time>
+        <button id="settings-toggle" class="icon-btn" type="button" aria-label="꾸미기" aria-expanded="false" aria-controls="settings">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </header>
 
-    <section id="todo-panel">
-      <header class="panel-head">
-        <h1 id="panel-title">전체</h1>
-        <span id="panel-count" class="num"></span>
-      </header>
+    <section id="settings" class="card settings" aria-label="꾸미기" hidden>
+      <div class="settings-themes">
+        <h2>테마 색상</h2>
+        <div id="theme-list" class="theme-list"></div>
+      </div>
+      <div class="settings-name">
+        <h2><label for="name-input">이름</label></h2>
+        <input id="name-input" type="text" maxlength="20" placeholder="인사말에 쓸 이름">
+      </div>
+    </section>
 
-      <form id="todo-form" class="card" autocomplete="off">
-        <input id="todo-text" type="text" placeholder="할 일을 입력하고 Enter" required>
-        <div class="form-row">
-          <select id="todo-folder" aria-label="폴더"></select>
-          <input id="todo-due" type="date" aria-label="마감일">
+    <div class="columns">
+      <nav id="folder-tree" class="card" aria-label="폴더"></nav>
+
+      <section id="todo-panel" class="card">
+        <div class="panel-head">
+          <span id="panel-crumb" class="crumb"></span>
+          <h2 id="panel-title"></h2>
+        </div>
+
+        <form id="todo-form" autocomplete="off">
+          <label class="field field-text">
+            <span>할 일</span>
+            <input id="todo-text" type="text" placeholder="무엇을 해야 하나요?" required>
+          </label>
+          <label class="field">
+            <span>폴더</span>
+            <select id="todo-folder"></select>
+          </label>
+          <label class="field">
+            <span>마감일</span>
+            <input id="todo-due" type="date">
+          </label>
           <label class="repeat-check">
             <input id="todo-repeat" type="checkbox"> 매일 반복
           </label>
-          <button type="submit">추가</button>
-        </div>
-      </form>
+          <button type="submit" class="primary-btn">추가</button>
+        </form>
 
-      <div id="todo-groups"></div>
-    </section>
+        <div id="todo-groups"></div>
+      </section>
+
+      <aside class="side">
+        <section class="card progress" aria-labelledby="progress-title">
+          <div class="progress-head">
+            <h2 id="progress-title">오늘 진행률</h2>
+            <span id="progress-num" class="num"></span>
+          </div>
+          <div class="bar"><div id="progress-bar" class="bar-fill"></div></div>
+          <ul id="progress-stats" class="progress-stats"></ul>
+        </section>
+      </aside>
+    </div>
   </div>
 
   <div id="toast" role="status" hidden></div>
