@@ -45,6 +45,8 @@ export function renderHeader({ todayLeft }) {
   if (icon.dataset.sky !== sky) {
     icon.dataset.sky = sky;
     icon.innerHTML = SKY_ICONS[sky];
+    // 배경 하늘의 빛도 같은 시간대를 따른다
+    document.documentElement.dataset.sky = sky;
   }
   document.getElementById("today-left").textContent = `${todayLeft}개`;
 
