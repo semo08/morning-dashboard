@@ -174,7 +174,7 @@ h1, h2 { margin: 0; }
 }
 
 .hero-left { display: flex; align-items: center; gap: 20px; }
-.sun { flex: none; color: var(--sun); }
+.sky-icon { flex: none; display: flex; width: 64px; height: 64px; color: var(--sun); }
 .hero-text { display: flex; flex-direction: column; gap: 4px; }
 .hero-date { font-size: 15px; font-weight: 600; }
 .hero h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
