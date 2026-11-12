@@ -37,6 +37,15 @@
       </div>
     </section>
 
+    <section class="card board" aria-labelledby="board-title">
+      <div id="memo" class="memo"></div>
+      <div class="board-head">
+        <h2 id="board-title">진행 중인 작업 <span id="board-count" class="board-count num"></span></h2>
+        <button id="board-add" type="button" class="dashed-btn">+ 작업 추가</button>
+      </div>
+      <div id="board-grid" class="board-grid"></div>
+    </section>
+
     <div class="columns">
       <nav id="folder-tree" class="card" aria-label="폴더"></nav>
 
@@ -83,6 +92,56 @@
       </aside>
     </div>
   </div>
+
+  <dialog id="card-dialog" class="dialog" aria-labelledby="card-dialog-title">
+    <form id="card-form" autocomplete="off">
+      <h2 id="card-dialog-title">작업 추가</h2>
+      <label class="dialog-field">
+        <span>작업 이름</span>
+        <input name="title" type="text" maxlength="60" required>
+      </label>
+      <div class="dialog-field">
+        <span>폴더</span>
+        <div id="card-folder-picker" class="folder-picker"></div>
+      </div>
+      <label class="dialog-field">
+        <span>진행률 <output id="card-progress-out" class="num">0%</output></span>
+        <input name="progress" type="range" min="0" max="100" step="5" value="0">
+      </label>
+      <label class="dialog-field">
+        <span>마지막으로 한 것</span>
+        <input name="last" type="text" maxlength="100">
+      </label>
+      <label class="dialog-field">
+        <span>다음 할 일</span>
+        <input name="next" type="text" maxlength="100">
+      </label>
+      <label class="dialog-field">
+        <span>막힌 점 <small>(없으면 비워두기)</small></span>
+        <input name="blocked" type="text" maxlength="100">
+      </label>
+      <div class="dialog-actions">
+        <button id="card-delete" type="button" class="danger-btn">삭제</button>
+        <button type="button" class="ghost-btn" data-close>취소</button>
+        <button type="submit" class="primary-btn">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="memo-dialog" class="dialog" aria-labelledby="memo-dialog-title">
+    <form id="memo-form" autocomplete="off">
+      <h2 id="memo-dialog-title">퇴근 체크아웃</h2>
+      <p class="dialog-desc">내일 아침의 나에게 한 줄 남겨두세요. 비워서 저장하면 메모가 지워져요.</p>
+      <label class="dialog-field">
+        <span>내일의 나에게</span>
+        <input name="memo" type="text" maxlength="100" placeholder="예: 로그인 오류, 세션 만료 시간 설정부터 확인하기">
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="ghost-btn" data-close>취소</button>
+        <button type="submit" class="primary-btn">남기기</button>
+      </div>
+    </form>
+  </dialog>
 
   <div id="toast" role="status" hidden></div>
 

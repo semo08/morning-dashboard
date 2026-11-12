@@ -129,6 +129,15 @@
   --font-num: "Space Grotesk", var(--font-body);
 }
 
+/* 폴더 색: .c-{색}이 붙은 요소 안에서 --c-bg(배경) / --c-text(글자) / --c-dot(점·막대)로 쓴다 */
+.c-work { --c-bg: var(--work-bg); --c-text: var(--work-text); --c-dot: var(--work-dot); }
+.c-side { --c-bg: var(--side-bg); --c-text: var(--side-text); --c-dot: var(--side-dot); }
+.c-study { --c-bg: var(--study-bg); --c-text: var(--study-text); --c-dot: var(--study-dot); }
+.c-purple { --c-bg: var(--purple-bg); --c-text: var(--purple-text); --c-dot: var(--purple-dot); }
+.c-rose { --c-bg: var(--rose-bg); --c-text: var(--rose-text); --c-dot: var(--rose-dot); }
+.c-teal { --c-bg: var(--teal-bg); --c-text: var(--teal-text); --c-dot: var(--teal-dot); }
+.c-gray { --c-bg: var(--gray-bg); --c-text: var(--gray-text); --c-dot: var(--gray-dot); }
+
 * { box-sizing: border-box; }
 
 body {
@@ -253,6 +262,144 @@ h1, h2 { margin: 0; }
 .sw-hero { background: var(--hero); }
 .sw-primary { background: var(--primary); }
 .theme-name { font-size: 13px; font-weight: 600; }
+
+/* ── 공통 버튼 ── */
+.ghost-btn,
+.dashed-btn,
+.danger-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ghost-btn { border: 1px solid var(--line); background: var(--card); color: var(--text); }
+.ghost-btn:hover { background: var(--soft); }
+.ghost-btn.sent { border-color: transparent; background: none; color: var(--muted); cursor: default; }
+.dashed-btn { border: 1px dashed var(--muted); background: none; color: var(--text); font-weight: 500; }
+.dashed-btn:hover { background: var(--soft); }
+.danger-btn { border: 0; background: var(--warn); color: var(--warn-text); }
+
+/* ── 작업 보드 + 어제의 메모 ── */
+.board {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.memo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: var(--soft);
+}
+.memo-icon { display: flex; flex: none; }
+.memo-body { flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.memo-label { font-size: 13px; color: var(--muted); }
+.memo-text { font-size: 18px; overflow-wrap: anywhere; }
+.memo.empty .memo-label { font-size: 15px; }
+
+.board-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.board-head h2 { font-size: 20px; }
+.board-count { font-size: 15px; font-weight: 500; color: var(--muted); }
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.board-empty { margin: 0; padding: 8px 0; color: var(--muted); }
+
+.board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.board-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.board-card-title { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.board-card-title h3 { margin: 0; font-size: 17px; overflow-wrap: anywhere; }
+.board-pct { font-size: 18px; font-weight: 700; }
+
+.board-bar { height: 8px; }
+.board-bar .bar-fill { background: var(--c-dot, var(--done)); }
+
+.board-notes {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  font-size: 14px;
+}
+.board-notes dt { color: var(--muted); font-weight: 600; }
+.board-notes dd { margin: 0; overflow-wrap: anywhere; }
+.board-notes dd.next { font-weight: 600; }
+.board-notes .blocked { color: var(--warn-text); }
+
+.board-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.board-updated { font-size: 12px; color: var(--muted); }
+.board-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.board-actions .ghost-btn,
+.board-actions .primary-btn { min-height: 36px; font-size: 13px; }
+.primary-btn.small { margin-left: 0; padding: 0 12px; border-radius: 10px; }
+
+/* ── 창 (작업 카드, 퇴근 체크아웃) ── */
+.dialog {
+  width: min(480px, calc(100vw - 32px));
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+.dialog::backdrop { background: rgba(20, 24, 34, 0.45); }
+.dialog form { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
+.dialog h2 { font-size: 20px; }
+.dialog-desc { margin: -6px 0 0; font-size: 14px; color: var(--muted); }
+
+.dialog-field { display: flex; flex-direction: column; gap: 6px; }
+.dialog-field > span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.dialog-field small { font-weight: 400; }
+.dialog-field output { margin-left: 4px; color: var(--text); }
+.dialog-field input[type="text"],
+.dialog-field select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--soft);
+  font-size: 15px;
+}
+.dialog-field input[type="range"] { accent-color: var(--primary); }
+
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px; }
+.dialog-actions .primary-btn { margin-left: 0; }
+.dialog-actions .danger-btn { margin-right: auto; }
+.dialog-actions [hidden] { display: none; }
 
 /* ── 3단 레이아웃 ── */
 .columns {
@@ -412,14 +559,7 @@ h1, h2 { margin: 0; }
 }
 .tree-sub .tree-toggle { width: 24px; }
 
-.dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.dot.c-work { background: var(--work-dot); }
-.dot.c-side { background: var(--side-dot); }
-.dot.c-study { background: var(--study-dot); }
-.dot.c-purple { background: var(--purple-dot); }
-.dot.c-rose { background: var(--rose-dot); }
-.dot.c-teal { background: var(--teal-dot); }
-.dot.c-gray { background: var(--gray-dot); }
+.dot { width: 10px; height: 10px; border-radius: 3px; flex: none; background: var(--c-dot, var(--muted)); }
 
 /* ── 투두 패널 ── */
 #todo-panel {
@@ -613,16 +753,11 @@ h1, h2 { margin: 0; }
 .tag {
   padding: 3px 10px;
   border-radius: 999px;
+  background: var(--c-bg, var(--soft));
+  color: var(--c-text, var(--muted));
   font-size: 12px;
   font-weight: 600;
 }
-.tag.c-work { background: var(--work-bg); color: var(--work-text); }
-.tag.c-side { background: var(--side-bg); color: var(--side-text); }
-.tag.c-study { background: var(--study-bg); color: var(--study-text); }
-.tag.c-purple { background: var(--purple-bg); color: var(--purple-text); }
-.tag.c-rose { background: var(--rose-bg); color: var(--rose-text); }
-.tag.c-teal { background: var(--teal-bg); color: var(--teal-text); }
-.tag.c-gray { background: var(--gray-bg); color: var(--gray-text); }
 
 .todo-delete {
   flex: none;

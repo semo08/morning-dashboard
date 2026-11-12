@@ -9,6 +9,8 @@ import {
 } from "./todos.js";
 import { renderHeader, startClock } from "./header.js";
 import { renderCalendar } from "./calendar.js";
+import { createCard, isSentToday, renderBoard } from "./board.js";
+import { renderMemo } from "./memo.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
 
 let folders = load("folders", null) ?? DEFAULT_FOLDERS;
@@ -16,6 +18,8 @@ save("folders", folders);   // 처음 실행이면 기본 폴더를 넣어둔다
 
 let todos = load("todos", []);
 if (migrateRepeats(todos)) save("todos", todos);
+let board = load("board", []);
+let memo = load("memo", null);       // { text, writtenAt }
 let expanded = load("expandedFolders", topFolders(folders).map(f => f.id));
 const settings = { theme: "sunny", name: "", ...load("settings", {}) };
 let selectedFolder = "all";
@@ -23,6 +27,8 @@ let editingFolders = false;
 let pickPath = [];          // 입력칸에서 고른 폴더 경로 [맨 위 id, 하위 id, ...]
 const calView = { year: new Date().getFullYear(), month: new Date().getMonth() };
 const deletedStack = [];    // Ctrl+Z 되돌리기용 { todo, index }
+let editingCardId = null;   // 작업 카드 창: 수정 중인 카드 (새 카드면 null)
+let cardPickPath = [];
 
 const $ = id => document.getElementById(id);
 const nav = $("folder-tree");
@@ -37,6 +43,10 @@ const toast = $("toast");
 const settingsPanel = $("settings");
 const settingsToggle = $("settings-toggle");
 const nameInput = $("name-input");
+const cardDialog = $("card-dialog");
+const cardForm = $("card-form");
+const memoDialog = $("memo-dialog");
+const memoForm = $("memo-form");
 
 function saveTodos() {
   save("todos", todos);
@@ -44,6 +54,10 @@ function saveTodos() {
 
 function saveFolders() {
   save("folders", folders);
+}
+
+function saveBoard() {
+  save("board", board);
 }
 
 function saveSettings() {
@@ -124,6 +138,12 @@ function removeFolder(id) {
   }
 
   ({ folders, todos } = deleteFolder(folders, todos, id));
+  // 작업 카드는 지우지 않는다: 하위 폴더면 한 단계 위로, 맨 위 폴더면 폴더 없음으로
+  board = board.map(card => {
+    if (!ids.includes(card.folderId)) return card;
+    return { ...card, folderId: isTop ? null : folder.parentId };
+  });
+  saveBoard();
   // 되돌리기 대기 중인 투두도 같은 규칙으로: 상위 폴더로 옮기거나 함께 버린다
   for (let i = deletedStack.length - 1; i >= 0; i--) {
     const todo = deletedStack[i].todo;
@@ -234,9 +254,135 @@ function renderMain() {
     },
   });
 
+  renderBoardSection();
   renderCal();
   renderProgress();
   updateHeader();
+}
+
+function renderBoardSection() {
+  renderMemo($("memo"), { memo, onCheckout: openMemoDialog });
+  $("board-count").textContent = board.length ? `${board.length}개` : "";
+  renderBoard($("board-grid"), {
+    board,
+    folders,
+    on: {
+      edit: openCardDialog,
+      send: sendNextToTodo,
+    },
+  });
+}
+
+// 카드의 "다음 할 일"을 오늘 마감 투두로 보낸다
+function sendNextToTodo(id) {
+  const card = board.find(c => c.id === id);
+  if (!card?.next || isSentToday(card)) return;
+  const folderId = folders.some(f => f.id === card.folderId) ? card.folderId : topFolders(folders)[0].id;
+  todos.push(createTodo({ text: card.next, folderId, due: todayStr(), repeat: false }));
+  card.sent = { date: todayStr(), text: card.next };
+  saveTodos();
+  saveBoard();
+  render();
+  showToast("오늘 할 일에 추가했어요");
+}
+
+// ── 작업 카드 창 ──
+
+function renderCardPicker(focusLevel) {
+  const container = $("card-folder-picker");
+  renderFolderPicker(container, {
+    folders,
+    path: cardPickPath,
+    onChange: (path, level) => {
+      cardPickPath = path;
+      renderCardPicker(level);
+    },
+  });
+  if (focusLevel !== undefined) container.querySelectorAll("select")[focusLevel]?.focus();
+}
+
+function openCardDialog(id = null) {
+  const card = board.find(c => c.id === id);
+  editingCardId = card ? card.id : null;
+  $("card-dialog-title").textContent = card ? "작업 수정" : "작업 추가";
+  $("card-delete").hidden = !card;
+
+  const f = cardForm.elements;
+  f.title.value = card?.title ?? "";
+  f.progress.value = card?.progress ?? 0;
+  f.last.value = card?.last ?? "";
+  f.next.value = card?.next ?? "";
+  f.blocked.value = card?.blocked ?? "";
+  $("card-progress-out").textContent = `${f.progress.value}%`;
+
+  // 새 카드는 지금 보고 있는 폴더(없으면 입력칸 폴더)에서 시작
+  const startId = card ? card.folderId : selectedFolder !== "all" ? selectedFolder : pickPath.at(-1);
+  cardPickPath = validPath(folders, folderPath(folders, startId).map(x => x.id));
+  renderCardPicker();
+
+  cardDialog.showModal();
+  f.title.focus();
+}
+
+cardForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = cardForm.elements;
+  const values = {
+    title: f.title.value.trim(),
+    folderId: cardPickPath.at(-1) ?? null,
+    progress: Number(f.progress.value),
+    last: f.last.value.trim(),
+    next: f.next.value.trim(),
+    blocked: f.blocked.value.trim(),
+  };
+  if (!values.title) return;
+
+  const card = board.find(c => c.id === editingCardId);
+  if (card) Object.assign(card, values, { updatedAt: Date.now() });
+  else board.push(createCard(values));
+  saveBoard();
+  cardDialog.close();
+  render();
+});
+
+cardForm.elements.progress.addEventListener("input", () => {
+  $("card-progress-out").textContent = `${cardForm.elements.progress.value}%`;
+});
+
+$("card-delete").addEventListener("click", () => {
+  const card = board.find(c => c.id === editingCardId);
+  if (!card || !confirm(`'${card.title}' 작업을 삭제할까요?`)) return;
+  board = board.filter(c => c.id !== card.id);
+  saveBoard();
+  cardDialog.close();
+  render();
+});
+
+$("board-add").addEventListener("click", () => openCardDialog());
+
+// ── 퇴근 체크아웃 ──
+
+function openMemoDialog() {
+  // 오늘 이미 남긴 메모가 있으면 고칠 수 있게 채워둔다
+  const writtenToday = memo && todayStr(new Date(memo.writtenAt)) === todayStr();
+  memoForm.elements.memo.value = writtenToday ? memo.text : "";
+  memoDialog.showModal();
+  memoForm.elements.memo.focus();
+}
+
+memoForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const text = memoForm.elements.memo.value.trim();
+  memo = text ? { text, writtenAt: Date.now() } : null;
+  save("memo", memo);
+  memoDialog.close();
+  renderBoardSection();
+  showToast(text ? "메모를 남겼어요. 내일 아침에 봐요" : "메모를 지웠어요");
+});
+
+// 창의 취소 버튼
+for (const button of document.querySelectorAll("dialog [data-close]")) {
+  button.addEventListener("click", () => button.closest("dialog").close());
 }
 
 function renderCal() {
@@ -391,6 +537,7 @@ document.addEventListener("keydown", e => {
   const tag = document.activeElement?.tagName;
   if (tag === "INPUT" && document.activeElement.type === "text") return;
   if (tag === "TEXTAREA") return;
+  if (document.querySelector("dialog[open]")) return;
   if (deletedStack.length === 0) return;
   e.preventDefault();
   undoDelete();
