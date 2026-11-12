@@ -94,18 +94,34 @@ function compareTodos(a, b) {
   return a.id < b.id ? -1 : 1;
 }
 
-export function fillFolderSelect(select, folders, selectedId) {
-  const current = select.value;
-  select.replaceChildren();
-  for (const top of topFolders(folders)) {
-    select.append(new Option(top.name, top.id));
-    for (const child of childFolders(folders, top.id)) {
-      select.append(new Option(folderLabel(child.id, folders), child.id));
-    }
+// 입력칸의 상위/하위 폴더 드롭다운. 왼쪽에서 폴더를 골라 두었으면 그 폴더가 기본값
+export function fillFolderSelects(topSelect, subSelect, folders, selectedId) {
+  let topId = topSelect.value;
+  let subId = subSelect.value;
+  const selected = folders.find(f => f.id === selectedId);
+  if (selected) {
+    topId = selected.parentId ?? selected.id;
+    subId = selected.parentId ? selected.id : "";
   }
-  // 폴더를 선택해 두었으면 그 폴더를 기본값으로
-  if (selectedId !== "all") select.value = selectedId;
-  else if (current) select.value = current;
+
+  const tops = topFolders(folders);
+  if (!tops.some(f => f.id === topId)) {
+    topId = tops[0]?.id ?? "";
+    subId = "";
+  }
+  topSelect.replaceChildren(...tops.map(f => new Option(f.name, f.id)));
+  topSelect.value = topId;
+  fillSubSelect(subSelect, folders, topId, subId);
+}
+
+export function fillSubSelect(subSelect, folders, topId, subId = "") {
+  const children = childFolders(folders, topId);
+  subSelect.replaceChildren(
+    new Option(children.length ? "없음" : "하위 폴더 없음", ""),
+    ...children.map(f => new Option(f.name, f.id)),
+  );
+  subSelect.value = children.some(f => f.id === subId) ? subId : "";
+  subSelect.disabled = children.length === 0;
 }
 
 export function renderTodos(container, { todos, folders, selectedId, onToggleDone, onDelete }) {

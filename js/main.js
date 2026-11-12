@@ -1,17 +1,21 @@
 // 시작점, 이벤트 연결
 import { load, save } from "./storage.js";
-import { DEFAULT_FOLDERS, inFolder, folderColor, folderLabel, renderFolderTree, topFolders } from "./folders.js";
-import { createTodo, fillFolderSelect, isVisible, renderTodos, resetRepeats, todayItems, todayStr } from "./todos.js";
+import {
+  DEFAULT_FOLDERS, addFolder, childFolders, deleteFolder, folderColor, folderLabel,
+  inFolder, nextColor, renderFolderTree, topFolders, updateFolder,
+} from "./folders.js";
+import { createTodo, fillFolderSelects, fillSubSelect, isVisible, renderTodos, resetRepeats, todayItems, todayStr } from "./todos.js";
 import { renderHeader, startClock } from "./header.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
 
-const folders = load("folders", null) ?? DEFAULT_FOLDERS;
+let folders = load("folders", null) ?? DEFAULT_FOLDERS;
 save("folders", folders);   // 처음 실행이면 기본 폴더를 넣어둔다
 
 let todos = load("todos", []);
 let expanded = load("expandedFolders", topFolders(folders).map(f => f.id));
 const settings = { theme: "sunny", name: "Sehwa", ...load("settings", {}) };
 let selectedFolder = "all";
+let editingFolders = false;
 const deletedStack = [];    // Ctrl+Z 되돌리기용 { todo, index }
 
 const $ = id => document.getElementById(id);
@@ -19,7 +23,8 @@ const nav = $("folder-tree");
 const groups = $("todo-groups");
 const form = $("todo-form");
 const textInput = $("todo-text");
-const folderSelect = $("todo-folder");
+const topSelect = $("todo-folder-top");
+const subSelect = $("todo-folder-sub");
 const dueInput = $("todo-due");
 const repeatInput = $("todo-repeat");
 const toast = $("toast");
@@ -29,6 +34,10 @@ const nameInput = $("name-input");
 
 function saveTodos() {
   save("todos", todos);
+}
+
+function saveFolders() {
+  save("folders", folders);
 }
 
 function saveSettings() {
@@ -88,31 +97,108 @@ function renderProgress() {
   }
 }
 
-function render() {
+function removeFolder(id) {
+  const folder = folders.find(f => f.id === id);
+  if (!folder) return;
+  const isTop = folder.parentId === null;
+
+  if (isTop && topFolders(folders).length === 1) {
+    showToast("상위 폴더는 하나 이상 있어야 해요");
+    return;
+  }
+
+  const ids = isTop ? [id, ...childFolders(folders, id).map(f => f.id)] : [id];
+  const todoCount = todos.filter(t => ids.includes(t.folderId)).length;
+  if (isTop) {
+    const subCount = ids.length - 1;
+    const parts = [subCount && `하위 폴더 ${subCount}개`, todoCount && `할 일 ${todoCount}개`].filter(Boolean);
+    const extra = parts.length ? `\n${parts.join(", ")}도 함께 삭제돼요.` : "";
+    if (!confirm(`'${folder.name}' 폴더를 삭제할까요?${extra}`)) return;
+  }
+
+  ({ folders, todos } = deleteFolder(folders, todos, id));
+  // 되돌리기 대기 중인 투두도 같은 규칙으로: 상위 폴더로 옮기거나 함께 버린다
+  for (let i = deletedStack.length - 1; i >= 0; i--) {
+    const todo = deletedStack[i].todo;
+    if (!ids.includes(todo.folderId)) continue;
+    if (isTop) deletedStack.splice(i, 1);
+    else todo.folderId = folder.parentId;
+  }
+  expanded = expanded.filter(x => folders.some(f => f.id === x));
+  if (!folders.some(f => f.id === selectedFolder)) selectedFolder = "all";
+  saveFolders();
+  saveTodos();
+  save("expandedFolders", expanded);
+  render();
+  if (!isTop && todoCount) showToast(`할 일 ${todoCount}개는 '${folderLabel(folder.parentId, folders)}'로 옮겼어요`);
+}
+
+function renderTree(focusId) {
   renderFolderTree(nav, {
     folders,
     selectedId: selectedFolder,
     expanded,
+    editing: editingFolders,
     countFor: openCount,
-    onSelect: id => {
-      selectedFolder = id;
-      // 상위 폴더를 고르면 하위 폴더도 펼쳐서 보여준다
-      const folder = folders.find(f => f.id === id);
-      if (folder && folder.parentId === null && !expanded.includes(id)) {
-        expanded = [...expanded, id];
+    focusId,
+    on: {
+      select: id => {
+        selectedFolder = id;
+        // 상위 폴더를 고르면 하위 폴더도 펼쳐서 보여준다
+        const folder = folders.find(f => f.id === id);
+        if (folder && folder.parentId === null && !expanded.includes(id)) {
+          expanded = [...expanded, id];
+          save("expandedFolders", expanded);
+        }
+        render();
+      },
+      toggleOpen: id => {
+        expanded = expanded.includes(id) ? expanded.filter(x => x !== id) : [...expanded, id];
         save("expandedFolders", expanded);
-      }
-      render();
-    },
-    onToggle: id => {
-      expanded = expanded.includes(id) ? expanded.filter(x => x !== id) : [...expanded, id];
-      save("expandedFolders", expanded);
-      render();
+        render();
+      },
+      toggleEdit: () => {
+        editingFolders = !editingFolders;
+        render();
+      },
+      add: parentId => {
+        const result = addFolder(folders, { name: "새 폴더", parentId });
+        if (!result.folder) return;
+        folders = result.folders;
+        if (parentId && !expanded.includes(parentId)) {
+          expanded = [...expanded, parentId];
+          save("expandedFolders", expanded);
+        }
+        saveFolders();
+        renderMain();
+        renderTree(result.folder.id);   // 새 폴더 이름칸에 바로 입력할 수 있게
+      },
+      // 이름 바꾸기는 트리를 다시 그리지 않는다 (입력칸을 벗어나며 누른 버튼이 사라지지 않게)
+      rename: (id, name) => {
+        folders = updateFolder(folders, id, { name });
+        saveFolders();
+        renderMain();
+      },
+      recolor: id => {
+        const folder = folders.find(f => f.id === id);
+        folders = updateFolder(folders, id, { color: nextColor(folder.color) });
+        saveFolders();
+        render();
+      },
+      remove: removeFolder,
     },
   });
+}
 
+function render() {
+  renderTree();
+  renderMain();
+}
+
+// 폴더 트리를 뺀 나머지
+function renderMain() {
   renderPanelHead();
-  fillFolderSelect(folderSelect, folders, selectedFolder);
+  fillFolderSelects(topSelect, subSelect, folders, selectedFolder);
 
   renderTodos(groups, {
     todos,
@@ -177,7 +263,7 @@ form.addEventListener("submit", e => {
   if (!text) return;
   todos.push(createTodo({
     text,
-    folderId: folderSelect.value,
+    folderId: subSelect.value || topSelect.value,
     due: dueInput.value,
     repeat: repeatInput.checked,
   }));
@@ -185,6 +271,10 @@ form.addEventListener("submit", e => {
   textInput.value = "";
   render();
   textInput.focus();
+});
+
+topSelect.addEventListener("change", () => {
+  fillSubSelect(subSelect, folders, topSelect.value);
 });
 
 // 매일 반복이면 마감일은 의미가 없다
