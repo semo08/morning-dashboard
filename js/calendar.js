@@ -1,5 +1,5 @@
 // 달력: 한 달 보기. 안 끝낸 할 일의 마감일에 점을 찍는다
-import { isVisible, todayStr } from "./todos.js";
+import { isRepeating, isVisible, todayStr } from "./todos.js";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -11,7 +11,7 @@ function dateStr(year, month, day) {
 function dueCounts(todos) {
   const counts = {};
   for (const t of todos) {
-    if (!t.due || t.done || t.repeat || !isVisible(t)) continue;
+    if (!t.due || t.done || isRepeating(t) || !isVisible(t)) continue;
     counts[t.due] = (counts[t.due] ?? 0) + 1;
   }
   return counts;

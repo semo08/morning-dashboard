@@ -4,7 +4,9 @@ import {
   DEFAULT_FOLDERS, addFolder, childFolders, deleteFolder, descendantIds, folderColor, folderLabel,
   folderPath, inFolder, nextColor, renderFolderPicker, renderFolderTree, topFolders, updateFolder, validPath,
 } from "./folders.js";
-import { createTodo, isVisible, renderTodos, resetRepeats, todayItems, todayStr } from "./todos.js";
+import {
+  WEEKDAY_NAMES, WEEK_ORDER, createTodo, isVisible, migrateRepeats, renderTodos, resetRepeats, todayItems, todayStr,
+} from "./todos.js";
 import { renderHeader, startClock } from "./header.js";
 import { renderCalendar } from "./calendar.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
@@ -13,6 +15,7 @@ let folders = load("folders", null) ?? DEFAULT_FOLDERS;
 save("folders", folders);   // 처음 실행이면 기본 폴더를 넣어둔다
 
 let todos = load("todos", []);
+if (migrateRepeats(todos)) save("todos", todos);
 let expanded = load("expandedFolders", topFolders(folders).map(f => f.id));
 const settings = { theme: "sunny", name: "", ...load("settings", {}) };
 let selectedFolder = "all";
@@ -29,6 +32,7 @@ const textInput = $("todo-text");
 const picker = $("folder-picker");
 const dueInput = $("todo-due");
 const repeatInput = $("todo-repeat");
+const repeatDays = $("repeat-days");
 const toast = $("toast");
 const settingsPanel = $("settings");
 const settingsToggle = $("settings-toggle");
@@ -148,10 +152,11 @@ function renderTree(focusId) {
     countFor: openCount,
     focusId,
     on: {
+      // 선택된 폴더를 다시 누르면 선택을 풀고 전체를 보여준다
       select: id => {
-        selectedFolder = id;
+        selectedFolder = selectedFolder === id ? "all" : id;
         // 하위 폴더가 있는 폴더를 고르면 펼쳐서 보여준다
-        if (childFolders(folders, id).length && !expanded.includes(id)) {
+        if (selectedFolder === id && childFolders(folders, id).length && !expanded.includes(id)) {
           expanded = [...expanded, id];
           save("expandedFolders", expanded);
         }
@@ -253,9 +258,8 @@ function renderCal() {
       },
       // 날짜를 누르면 입력칸의 마감일로. 같은 날을 다시 누르면 비운다
       pick: date => {
+        setRepeat(false);
         dueInput.value = dueInput.value === date ? "" : date;
-        repeatInput.checked = false;
-        dueInput.disabled = false;
         renderCal();
         textInput.focus();
       },
@@ -308,15 +312,51 @@ function refreshDay() {
   render();
 }
 
+// 반복 요일 칩: 월~일, 처음엔 월~금이 체크되어 있다
+function renderRepeatDays() {
+  for (const day of WEEK_ORDER) {
+    const chip = document.createElement("label");
+    chip.className = "day-chip" + (day === 0 || day === 6 ? " weekend" : "");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.value = day;
+    box.checked = day >= 1 && day <= 5;
+    const name = document.createElement("span");
+    name.textContent = WEEKDAY_NAMES[day];
+    chip.append(box, name);
+    repeatDays.append(chip);
+  }
+}
+
+function checkedRepeatDays() {
+  return [...repeatDays.querySelectorAll("input:checked")].map(box => Number(box.value));
+}
+
+// 반복을 켜면 요일 칩이 나오고, 마감일은 쓰지 않는다
+function setRepeat(on) {
+  repeatInput.checked = on;
+  repeatDays.hidden = !on;
+  dueInput.disabled = on;
+  if (on) dueInput.value = "";
+}
+
 form.addEventListener("submit", e => {
   e.preventDefault();
   const text = textInput.value.trim();
   if (!text) return;
+  let repeat = false;
+  if (repeatInput.checked) {
+    repeat = checkedRepeatDays();
+    if (repeat.length === 0) {
+      showToast("반복할 요일을 하나 이상 골라주세요");
+      return;
+    }
+  }
   todos.push(createTodo({
     text,
     folderId: pickPath.at(-1),
     due: dueInput.value,
-    repeat: repeatInput.checked,
+    repeat,
   }));
   saveTodos();
   textInput.value = "";
@@ -324,10 +364,8 @@ form.addEventListener("submit", e => {
   textInput.focus();
 });
 
-// 매일 반복이면 마감일은 의미가 없다
 repeatInput.addEventListener("change", () => {
-  dueInput.disabled = repeatInput.checked;
-  if (repeatInput.checked) dueInput.value = "";
+  setRepeat(repeatInput.checked);
   renderCal();
 });
 
@@ -367,5 +405,6 @@ if (!THEMES.some(t => t.id === settings.theme)) settings.theme = "sunny";
 applyTheme(settings.theme);
 nameInput.value = settings.name;
 renderSettings();
+renderRepeatDays();
 refreshDay();
 startClock(updateHeader, refreshDay);

@@ -47,19 +47,24 @@
         </div>
 
         <form id="todo-form" autocomplete="off">
-          <label class="field field-text">
-            <span>할 일</span>
-            <input id="todo-text" type="text" placeholder="무엇을 해야 하나요?" required>
-          </label>
-          <div id="folder-picker" class="folder-picker"></div>
-          <label class="field">
-            <span>마감일</span>
-            <input id="todo-due" type="date">
-          </label>
-          <label class="repeat-check">
-            <input id="todo-repeat" type="checkbox"> 매일 반복
-          </label>
-          <button type="submit" class="primary-btn">추가</button>
+          <div class="form-head">
+            <span class="form-label">폴더</span>
+            <div id="folder-picker" class="folder-picker"></div>
+          </div>
+
+          <input id="todo-text" class="form-text" type="text" placeholder="무엇을 해야 하나요?" aria-label="할 일" required>
+
+          <div class="form-foot">
+            <label class="form-due">
+              <span class="form-label">마감일</span>
+              <input id="todo-due" type="date">
+            </label>
+            <label class="repeat-check">
+              <input id="todo-repeat" type="checkbox"> 반복
+            </label>
+            <div id="repeat-days" class="repeat-days" role="group" aria-label="반복 요일" hidden></div>
+            <button type="submit" class="primary-btn">추가</button>
+          </div>
         </form>
 
         <div id="todo-groups"></div>

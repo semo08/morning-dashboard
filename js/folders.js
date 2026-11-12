@@ -129,19 +129,23 @@ export function validPath(folders, path) {
   return result;
 }
 
-// 고른 폴더에 하위 폴더가 있으면 드롭다운을 하나 더 보여준다
+// 고른 폴더에 하위 폴더가 있으면 "업무 › 개발 › …"처럼 드롭다운을 하나 더 잇는다
 export function renderFolderPicker(container, { folders, path, onChange }) {
   container.replaceChildren();
   let options = topFolders(folders);
   for (let level = 0; options.length > 0; level++) {
     const chosen = path[level] ?? "";
 
-    const field = document.createElement("label");
-    field.className = "field";
-    const caption = document.createElement("span");
-    caption.textContent = level === 0 ? "폴더" : "하위 폴더";
+    if (level > 0) {
+      const sep = document.createElement("span");
+      sep.className = "picker-sep";
+      sep.setAttribute("aria-hidden", "true");
+      sep.textContent = "›";
+      container.append(sep);
+    }
 
     const select = document.createElement("select");
+    select.setAttribute("aria-label", level === 0 ? "폴더" : `${level}단계 하위 폴더`);
     if (level > 0) select.append(new Option("없음", ""));
     for (const f of options) select.append(new Option(f.name, f.id));
     select.value = chosen;
@@ -149,8 +153,7 @@ export function renderFolderPicker(container, { folders, path, onChange }) {
       onChange([...path.slice(0, level), ...(select.value ? [select.value] : [])], level);
     });
 
-    field.append(caption, select);
-    container.append(field);
+    container.append(select);
 
     if (!chosen) break;
     options = childFolders(folders, chosen);
@@ -166,7 +169,7 @@ export function renderFolderTree(nav, { folders, selectedId, expanded, editing, 
   head.className = "tree-head";
   const title = document.createElement("h2");
   title.className = "tree-title";
-  title.textContent = "폴더";
+  title.textContent = "할 일";
   const editBtn = document.createElement("button");
   editBtn.type = "button";
   editBtn.className = "tree-edit-toggle" + (editing ? " on" : "");
@@ -188,7 +191,6 @@ export function renderFolderTree(nav, { folders, selectedId, expanded, editing, 
     addTop.addEventListener("click", () => on.add(null));
     nav.append(list, addTop);
   } else {
-    list.append(folderItem({ id: "all", name: "전체" }, 0));
     for (const top of topFolders(folders)) list.append(folderItem(top, 0));
     nav.append(list);
   }

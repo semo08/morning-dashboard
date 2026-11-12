@@ -433,58 +433,109 @@ h1, h2 { margin: 0; }
 .crumb { font-size: 13px; color: var(--muted); }
 .panel-head h2 { font-size: 24px; }
 
+/* 입력칸: 위 폴더 / 가운데 할 일 / 아래 마감일·반복·추가 */
 #todo-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
   border-radius: 14px;
   background: var(--soft);
 }
 
-.field {
+.form-label { font-size: 12px; color: var(--muted); }
+
+.form-head {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+/* 하위 폴더가 늘어나도 한 줄에 이어지다가 넘치면 줄바꿈 */
+.folder-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.picker-sep { color: var(--muted); }
+
+.form-head select,
+.form-due input {
+  min-height: 34px;
+  max-width: 100%;
   padding: 4px 8px;
-}
-.field > span { font-size: 12px; color: var(--muted); }
-.field-text { flex: 1 1 240px; }
-.folder-picker { display: contents; }
-
-#todo-text {
-  padding: 4px 0;
-  border: 0;
-  background: none;
-  font-size: 16px;
-  outline: none;
-}
-
-.field select,
-.field input[type="date"] {
-  min-height: 36px;
-  padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card);
   font-size: 14px;
 }
-.field input[type="date"]:disabled { opacity: 0.4; }
+.form-due input:disabled { opacity: 0.4; }
+
+.form-text {
+  width: 100%;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font-size: 16px;
+  outline: none;
+}
+.form-text:focus { border-bottom-color: var(--text); }
+
+.form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding-top: 8px;
+}
+.form-due { display: flex; align-items: center; gap: 8px; }
 
 .repeat-check {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  min-height: 34px;
   font-size: 14px;
   color: var(--muted);
   cursor: pointer;
 }
-.repeat-check input { width: 18px; height: 18px; accent-color: var(--primary); }
+.repeat-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary); }
+
+.repeat-days { display: flex; flex-wrap: wrap; gap: 4px; }
+.repeat-days[hidden] { display: none; }
+
+/* 요일 칩: 체크박스는 숨기고 칩 전체를 누르게 */
+.day-chip { position: relative; cursor: pointer; }
+.day-chip input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.day-chip span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.day-chip.weekend span { color: var(--warn-text); }
+.day-chip input:checked + span { border-color: var(--primary); background: var(--primary); color: var(--primary-text); }
+.day-chip input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 2px; }
 
 .primary-btn {
-  align-self: stretch;
-  min-height: 44px;
+  min-height: 40px;
   margin-left: auto;
   padding: 0 22px;
   border: 0;

@@ -2,7 +2,11 @@
 import { folderColor, folderLabel, inFolder } from "./folders.js";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];   // Date.getDay() 순서
+
+// 반복 요일을 고르는 칸은 월요일부터
+export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+export const WEEKDAY_NAMES = WEEKDAYS;
 
 export const GROUPS = [
   { id: "overdue", title: "지난 마감" },
@@ -26,8 +30,35 @@ function daysUntil(due) {
   return Math.round((dueDate - today) / DAY_MS);
 }
 
+// repeat: false 또는 반복할 요일 배열 [1, 3, 5] (0 = 일요일)
+export function isRepeating(todo) {
+  return Array.isArray(todo.repeat) && todo.repeat.length > 0;
+}
+
+// 예전 데이터의 repeat: true(매일 반복)를 요일 배열로 바꾼다. 바뀐 게 있으면 true
+export function migrateRepeats(todos) {
+  let changed = false;
+  for (const todo of todos) {
+    if (todo.repeat === true) {
+      todo.repeat = [0, 1, 2, 3, 4, 5, 6];
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+// "매일" / "평일" / "주말" / "월·수·금"
+export function repeatLabel(days) {
+  const sorted = WEEK_ORDER.filter(d => days.includes(d));
+  if (sorted.length === 7) return "매일";
+  if (sorted.join() === "1,2,3,4,5") return "평일";
+  if (sorted.join() === "6,0") return "주말";
+  return sorted.map(d => WEEKDAYS[d]).join("·");
+}
+
 export function getGroup(todo) {
-  if (todo.repeat) return "today";        // 매일 반복은 항상 오늘
+  // 반복 투두: 오늘이 반복 요일이면 오늘, 아니면 다음 반복일이 일주일 안이니 이번 주
+  if (isRepeating(todo)) return todo.repeat.includes(new Date().getDay()) ? "today" : "week";
   if (!todo.due) return "later";
   const diffDays = daysUntil(todo.due);
 
@@ -52,7 +83,7 @@ export function createTodo({ text, folderId, due, repeat }) {
     id: "t_" + Date.now(),
     text,
     folderId,
-    due: repeat ? null : due || null,
+    due: repeat ? null : due || null,   // 반복 투두는 마감일 대신 요일
     repeat,
     done: false,
     doneAt: null,
@@ -60,12 +91,12 @@ export function createTodo({ text, folderId, due, repeat }) {
   };
 }
 
-// 날짜가 바뀌었으면 매일 반복 투두의 완료를 풀어준다. 바뀐 게 있으면 true
+// 날짜가 바뀌었으면 반복 투두의 완료를 풀어준다. 바뀐 게 있으면 true
 export function resetRepeats(todos) {
   const today = todayStr();
   let changed = false;
   for (const todo of todos) {
-    if (todo.repeat && todo.done && todo.doneAt !== today) {
+    if (isRepeating(todo) && todo.done && todo.doneAt !== today) {
       todo.done = false;
       todo.doneAt = null;
       changed = true;
@@ -76,7 +107,7 @@ export function resetRepeats(todos) {
 
 // 어제 이전에 끝낸 일반 투두는 목록에서 숨긴다 (데이터는 남겨둔다)
 export function isVisible(todo) {
-  return !todo.done || todo.repeat || todo.doneAt === todayStr();
+  return !todo.done || isRepeating(todo) || todo.doneAt === todayStr();
 }
 
 // 오늘 챙겨야 할 투두 = 지난 마감 + 오늘 그룹 (헤더의 남은 개수, 진행률에 쓴다)
@@ -157,10 +188,10 @@ export function renderTodos(container, { todos, folders, selectedId, onToggleDon
       tag.textContent = label;
       meta.append(tag);
     }
-    if (todo.repeat) {
+    if (isRepeating(todo)) {
       const rep = document.createElement("span");
       rep.className = "meta-repeat";
-      rep.textContent = "↻ 매일";
+      rep.textContent = `↻ ${repeatLabel(todo.repeat)}`;
       meta.append(rep);
     }
     const due = dueLabel(todo);
