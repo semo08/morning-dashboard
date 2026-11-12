@@ -21,7 +21,7 @@
         </svg>
         <div class="hero-text">
           <span id="today-date" class="hero-date"></span>
-          <h1 id="greeting"></h1>
+          <h1 class="greeting"><span id="greeting"></span>, <input id="name-input" class="name-input" type="text" maxlength="20" placeholder="이름" aria-label="이름" autocomplete="off"></h1>
           <span>오늘 할 일 <strong id="today-left">0개</strong> 남았어</span>
         </div>
       </div>
@@ -37,10 +37,6 @@
       <div class="settings-themes">
         <h2>테마 색상</h2>
         <div id="theme-list" class="theme-list"></div>
-      </div>
-      <div class="settings-name">
-        <h2><label for="name-input">이름</label></h2>
-        <input id="name-input" type="text" maxlength="20" placeholder="인사말에 쓸 이름">
       </div>
     </section>
 
@@ -58,14 +54,7 @@
             <span>할 일</span>
             <input id="todo-text" type="text" placeholder="무엇을 해야 하나요?" required>
           </label>
-          <label class="field">
-            <span>상위 폴더</span>
-            <select id="todo-folder-top"></select>
-          </label>
-          <label class="field">
-            <span>하위 폴더</span>
-            <select id="todo-folder-sub"></select>
-          </label>
+          <div id="folder-picker" class="folder-picker"></div>
           <label class="field">
             <span>마감일</span>
             <input id="todo-due" type="date">

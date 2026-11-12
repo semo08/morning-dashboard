@@ -1,10 +1,10 @@
 // 시작점, 이벤트 연결
 import { load, save } from "./storage.js";
 import {
-  DEFAULT_FOLDERS, addFolder, childFolders, deleteFolder, folderColor, folderLabel,
-  inFolder, nextColor, renderFolderTree, topFolders, updateFolder,
+  DEFAULT_FOLDERS, addFolder, childFolders, deleteFolder, descendantIds, folderColor, folderLabel,
+  folderPath, inFolder, nextColor, renderFolderPicker, renderFolderTree, topFolders, updateFolder, validPath,
 } from "./folders.js";
-import { createTodo, fillFolderSelects, fillSubSelect, isVisible, renderTodos, resetRepeats, todayItems, todayStr } from "./todos.js";
+import { createTodo, isVisible, renderTodos, resetRepeats, todayItems, todayStr } from "./todos.js";
 import { renderHeader, startClock } from "./header.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
 
@@ -13,9 +13,10 @@ save("folders", folders);   // 처음 실행이면 기본 폴더를 넣어둔다
 
 let todos = load("todos", []);
 let expanded = load("expandedFolders", topFolders(folders).map(f => f.id));
-const settings = { theme: "sunny", name: "Sehwa", ...load("settings", {}) };
+const settings = { theme: "sunny", name: "", ...load("settings", {}) };
 let selectedFolder = "all";
 let editingFolders = false;
+let pickPath = [];          // 입력칸에서 고른 폴더 경로 [맨 위 id, 하위 id, ...]
 const deletedStack = [];    // Ctrl+Z 되돌리기용 { todo, index }
 
 const $ = id => document.getElementById(id);
@@ -23,8 +24,7 @@ const nav = $("folder-tree");
 const groups = $("todo-groups");
 const form = $("todo-form");
 const textInput = $("todo-text");
-const topSelect = $("todo-folder-top");
-const subSelect = $("todo-folder-sub");
+const picker = $("folder-picker");
 const dueInput = $("todo-due");
 const repeatInput = $("todo-repeat");
 const toast = $("toast");
@@ -53,7 +53,7 @@ function todayLeft() {
 }
 
 function updateHeader() {
-  renderHeader({ name: settings.name, todayLeft: todayLeft() });
+  renderHeader({ todayLeft: todayLeft() });
 }
 
 function renderPanelHead() {
@@ -62,7 +62,7 @@ function renderPanelHead() {
   let title = "전체 할 일";
   if (folder) {
     crumb = folderLabel(folder.id, folders);
-    title = folder.parentId === null ? `${folder.name} 전체` : folder.name;
+    title = childFolders(folders, folder.id).length ? `${folder.name} 전체` : folder.name;
   }
   $("panel-crumb").textContent = crumb;
   $("panel-title").textContent = title;
@@ -107,8 +107,9 @@ function removeFolder(id) {
     return;
   }
 
-  const ids = isTop ? [id, ...childFolders(folders, id).map(f => f.id)] : [id];
+  const ids = isTop ? descendantIds(folders, id) : [id];
   const todoCount = todos.filter(t => ids.includes(t.folderId)).length;
+  const childCount = childFolders(folders, id).length;
   if (isTop) {
     const subCount = ids.length - 1;
     const parts = [subCount && `하위 폴더 ${subCount}개`, todoCount && `할 일 ${todoCount}개`].filter(Boolean);
@@ -130,7 +131,10 @@ function removeFolder(id) {
   saveTodos();
   save("expandedFolders", expanded);
   render();
-  if (!isTop && todoCount) showToast(`할 일 ${todoCount}개는 '${folderLabel(folder.parentId, folders)}'로 옮겼어요`);
+  if (!isTop && (todoCount || childCount)) {
+    const parts = [childCount && `하위 폴더 ${childCount}개`, todoCount && `할 일 ${todoCount}개`].filter(Boolean);
+    showToast(`${parts.join(", ")}는 '${folderLabel(folder.parentId, folders)}'로 옮겼어요`);
+  }
 }
 
 function renderTree(focusId) {
@@ -144,9 +148,8 @@ function renderTree(focusId) {
     on: {
       select: id => {
         selectedFolder = id;
-        // 상위 폴더를 고르면 하위 폴더도 펼쳐서 보여준다
-        const folder = folders.find(f => f.id === id);
-        if (folder && folder.parentId === null && !expanded.includes(id)) {
+        // 하위 폴더가 있는 폴더를 고르면 펼쳐서 보여준다
+        if (childFolders(folders, id).length && !expanded.includes(id)) {
           expanded = [...expanded, id];
           save("expandedFolders", expanded);
         }
@@ -198,7 +201,10 @@ function render() {
 // 폴더 트리를 뺀 나머지
 function renderMain() {
   renderPanelHead();
-  fillFolderSelects(topSelect, subSelect, folders, selectedFolder);
+  // 왼쪽에서 폴더를 골라 두었으면 입력칸 폴더도 그 폴더로
+  if (selectedFolder !== "all") pickPath = folderPath(folders, selectedFolder).map(f => f.id);
+  pickPath = validPath(folders, pickPath);
+  renderPicker();
 
   renderTodos(groups, {
     todos,
@@ -223,6 +229,19 @@ function renderMain() {
 
   renderProgress();
   updateHeader();
+}
+
+function renderPicker(focusLevel) {
+  renderFolderPicker(picker, {
+    folders,
+    path: pickPath,
+    onChange: (path, level) => {
+      pickPath = path;
+      renderPicker(level);
+    },
+  });
+  // 드롭다운을 다시 그려도 방금 고른 칸에 포커스를 남긴다
+  if (focusLevel !== undefined) picker.querySelectorAll("select")[focusLevel]?.focus();
 }
 
 function renderSettings() {
@@ -263,7 +282,7 @@ form.addEventListener("submit", e => {
   if (!text) return;
   todos.push(createTodo({
     text,
-    folderId: subSelect.value || topSelect.value,
+    folderId: pickPath.at(-1),
     due: dueInput.value,
     repeat: repeatInput.checked,
   }));
@@ -271,10 +290,6 @@ form.addEventListener("submit", e => {
   textInput.value = "";
   render();
   textInput.focus();
-});
-
-topSelect.addEventListener("change", () => {
-  fillSubSelect(subSelect, folders, topSelect.value);
 });
 
 // 매일 반복이면 마감일은 의미가 없다
@@ -291,7 +306,9 @@ settingsToggle.addEventListener("click", () => {
 nameInput.addEventListener("input", () => {
   settings.name = nameInput.value.trim();
   saveSettings();
-  updateHeader();
+});
+nameInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") nameInput.blur();
 });
 
 document.addEventListener("keydown", e => {

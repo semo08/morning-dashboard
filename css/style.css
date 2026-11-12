@@ -179,6 +179,24 @@ h1, h2 { margin: 0; }
 .hero-date { font-size: 15px; font-weight: 600; }
 .hero h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
 
+/* 인사말 속 이름: 밑줄만 있는 입력칸, 글자 길이만큼 늘어난다 */
+.name-input {
+  field-sizing: content;
+  min-width: 3ch;
+  max-width: 12em;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 2px solid currentColor;
+  border-radius: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  outline: none;
+}
+.name-input::placeholder { color: inherit; opacity: 0.4; }
+.name-input:focus { border-bottom-color: var(--sun); }
+
 .hero-right { display: flex; align-items: center; gap: 20px; }
 
 .clock {
@@ -211,7 +229,6 @@ h1, h2 { margin: 0; }
 .settings[hidden] { display: none; }
 .settings h2 { margin-bottom: 12px; font-size: 16px; }
 .settings-themes { flex: 2 1 420px; }
-.settings-name { flex: 1 1 220px; }
 
 .theme-list { display: flex; flex-wrap: wrap; gap: 12px; }
 
@@ -236,15 +253,6 @@ h1, h2 { margin: 0; }
 .sw-hero { background: var(--hero); }
 .sw-primary { background: var(--primary); }
 .theme-name { font-size: 13px; font-weight: 600; }
-
-#name-input {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--soft);
-}
 
 /* ── 3단 레이아웃 ── */
 .columns {
@@ -308,7 +316,8 @@ h1, h2 { margin: 0; }
 .tree-row.top .tree-input { font-weight: 600; }
 .tree-input:focus { outline: 2px solid var(--text); outline-offset: -1px; }
 
-.tree-delete {
+.tree-delete,
+.tree-add-child {
   width: 32px;
   height: 36px;
   flex: none;
@@ -321,25 +330,22 @@ h1, h2 { margin: 0; }
   cursor: pointer;
 }
 .tree-delete:hover { background: var(--warn); color: var(--warn-text); }
+.tree-add-child:hover { background: var(--soft); color: var(--text); }
+.tree-add-child.hidden { visibility: hidden; }
 
-.tree-add {
+.tree-add-top {
   width: 100%;
   min-height: 36px;
+  margin-top: 8px;
   padding: 6px 10px;
-  border: 0;
+  border: 1px dashed var(--line);
   border-radius: 8px;
   background: none;
   color: var(--muted);
   font-size: 13px;
-  text-align: left;
   cursor: pointer;
 }
-.tree-add:hover { background: var(--soft); color: var(--text); }
-.tree-add-top {
-  margin-top: 8px;
-  border: 1px dashed var(--line);
-  text-align: center;
-}
+.tree-add-top:hover { background: var(--soft); color: var(--text); }
 
 .tree, .tree-sub { list-style: none; margin: 0; padding: 0; }
 .tree { display: flex; flex-direction: column; gap: 2px; }
@@ -400,10 +406,11 @@ h1, h2 { margin: 0; }
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin: 2px 0 4px 34px;
-  padding-left: 10px;
+  margin: 2px 0 4px 15px;
+  padding-left: 4px;
   border-left: 2px solid var(--line);
 }
+.tree-sub .tree-toggle { width: 24px; }
 
 .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .dot.c-work { background: var(--work-dot); }
@@ -443,6 +450,7 @@ h1, h2 { margin: 0; }
 }
 .field > span { font-size: 12px; color: var(--muted); }
 .field-text { flex: 1 1 240px; }
+.folder-picker { display: contents; }
 
 #todo-text {
   padding: 4px 0;

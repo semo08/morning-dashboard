@@ -1,5 +1,5 @@
 // 투두 추가/완료/삭제, 그룹 나누기
-import { folderColor, folderLabel, inFolder, topFolders, childFolders } from "./folders.js";
+import { folderColor, folderLabel, inFolder } from "./folders.js";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -92,36 +92,6 @@ function compareTodos(a, b) {
     return a.due < b.due ? -1 : 1;
   }
   return a.id < b.id ? -1 : 1;
-}
-
-// 입력칸의 상위/하위 폴더 드롭다운. 왼쪽에서 폴더를 골라 두었으면 그 폴더가 기본값
-export function fillFolderSelects(topSelect, subSelect, folders, selectedId) {
-  let topId = topSelect.value;
-  let subId = subSelect.value;
-  const selected = folders.find(f => f.id === selectedId);
-  if (selected) {
-    topId = selected.parentId ?? selected.id;
-    subId = selected.parentId ? selected.id : "";
-  }
-
-  const tops = topFolders(folders);
-  if (!tops.some(f => f.id === topId)) {
-    topId = tops[0]?.id ?? "";
-    subId = "";
-  }
-  topSelect.replaceChildren(...tops.map(f => new Option(f.name, f.id)));
-  topSelect.value = topId;
-  fillSubSelect(subSelect, folders, topId, subId);
-}
-
-export function fillSubSelect(subSelect, folders, topId, subId = "") {
-  const children = childFolders(folders, topId);
-  subSelect.replaceChildren(
-    new Option(children.length ? "없음" : "하위 폴더 없음", ""),
-    ...children.map(f => new Option(f.name, f.id)),
-  );
-  subSelect.value = children.some(f => f.id === subId) ? subId : "";
-  subSelect.disabled = children.length === 0;
 }
 
 export function renderTodos(container, { todos, folders, selectedId, onToggleDone, onDelete }) {

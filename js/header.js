@@ -9,12 +9,12 @@ function greetingFor(hour) {
   return "Good evening";
 }
 
-export function renderHeader({ name, todayLeft }) {
+// 이름은 헤더의 입력칸이 직접 들고 있어서 여기서는 건드리지 않는다
+export function renderHeader({ todayLeft }) {
   const now = new Date();
   document.getElementById("today-date").textContent =
     `${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAYS[now.getDay()]}요일`;
-  document.getElementById("greeting").textContent =
-    name ? `${greetingFor(now.getHours())}, ${name}` : greetingFor(now.getHours());
+  document.getElementById("greeting").textContent = greetingFor(now.getHours());
   document.getElementById("today-left").textContent = `${todayLeft}개`;
 
   const clock = document.getElementById("clock");
