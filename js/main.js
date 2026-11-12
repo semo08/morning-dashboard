@@ -6,6 +6,7 @@ import {
 } from "./folders.js";
 import { createTodo, isVisible, renderTodos, resetRepeats, todayItems, todayStr } from "./todos.js";
 import { renderHeader, startClock } from "./header.js";
+import { renderCalendar } from "./calendar.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
 
 let folders = load("folders", null) ?? DEFAULT_FOLDERS;
@@ -17,6 +18,7 @@ const settings = { theme: "sunny", name: "", ...load("settings", {}) };
 let selectedFolder = "all";
 let editingFolders = false;
 let pickPath = [];          // 입력칸에서 고른 폴더 경로 [맨 위 id, 하위 id, ...]
+const calView = { year: new Date().getFullYear(), month: new Date().getMonth() };
 const deletedStack = [];    // Ctrl+Z 되돌리기용 { todo, index }
 
 const $ = id => document.getElementById(id);
@@ -227,8 +229,38 @@ function renderMain() {
     },
   });
 
+  renderCal();
   renderProgress();
   updateHeader();
+}
+
+function renderCal() {
+  renderCalendar($("calendar"), {
+    ...calView,
+    todos,
+    selectedDate: dueInput.value,
+    on: {
+      move: delta => {
+        const d = new Date(calView.year, calView.month + delta, 1);
+        calView.year = d.getFullYear();
+        calView.month = d.getMonth();
+        renderCal();
+      },
+      today: () => {
+        calView.year = new Date().getFullYear();
+        calView.month = new Date().getMonth();
+        renderCal();
+      },
+      // 날짜를 누르면 입력칸의 마감일로. 같은 날을 다시 누르면 비운다
+      pick: date => {
+        dueInput.value = dueInput.value === date ? "" : date;
+        repeatInput.checked = false;
+        dueInput.disabled = false;
+        renderCal();
+        textInput.focus();
+      },
+    },
+  });
 }
 
 function renderPicker(focusLevel) {
@@ -296,7 +328,11 @@ form.addEventListener("submit", e => {
 repeatInput.addEventListener("change", () => {
   dueInput.disabled = repeatInput.checked;
   if (repeatInput.checked) dueInput.value = "";
+  renderCal();
 });
+
+// 마감일을 직접 고쳐도 달력 표시가 따라가게
+dueInput.addEventListener("change", renderCal);
 
 settingsToggle.addEventListener("click", () => {
   settingsPanel.hidden = !settingsPanel.hidden;
