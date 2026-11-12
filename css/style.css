@@ -264,7 +264,7 @@ h1, h2 { margin: 0; }
 }
 
 .page {
-  max-width: 1360px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 36px 24px 64px;
   display: flex;
@@ -564,9 +564,18 @@ h1, h2 { margin: 0; }
 .dialog-actions [hidden] { display: none; }
 
 /* ── 3단 레이아웃 ── */
+/* 왼쪽: 보드 + 폴더/할 일, 오른쪽: 달력·진행률·잔디 열 */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+.main { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+
 .columns {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 300px;
+  grid-template-columns: 240px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -1112,8 +1121,8 @@ h1, h2 { margin: 0; }
 
 /* 좁아지면 오른쪽 열을 아래로, 더 좁으면 한 줄로 */
 @media (max-width: 1100px) {
-  .columns { grid-template-columns: 240px minmax(0, 1fr); }
-  .side { grid-column: 1 / -1; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .side { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
 }
 
 @media (max-width: 720px) {
@@ -1121,6 +1130,7 @@ h1, h2 { margin: 0; }
   .hero { padding: 20px; }
   .hero h1 { font-size: 24px; }
   .clock { font-size: 44px; }
+  .layout, .main { gap: 16px; }
   .columns { grid-template-columns: 1fr; gap: 16px; }
   #todo-panel { padding: 20px 16px; }
   .todo-delete { opacity: 1; }

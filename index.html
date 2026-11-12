@@ -38,47 +38,52 @@
       </div>
     </section>
 
-    <section class="card board" aria-labelledby="board-title">
-      <div id="memo" class="memo"></div>
-      <div class="board-head">
-        <h2 id="board-title">진행 중인 작업 <span id="board-count" class="board-count num"></span></h2>
-        <button id="board-add" type="button" class="dashed-btn">+ 작업 추가</button>
-      </div>
-      <div id="board-grid" class="board-grid"></div>
-    </section>
+    <div class="layout">
+      <div class="main">
+        <section class="card board" aria-labelledby="board-title">
+          <div id="memo" class="memo"></div>
+          <div class="board-head">
+            <h2 id="board-title">진행 중인 작업 <span id="board-count" class="board-count num"></span></h2>
+            <button id="board-add" type="button" class="dashed-btn">+ 작업 추가</button>
+          </div>
+          <div id="board-grid" class="board-grid"></div>
+        </section>
 
-    <div class="columns">
-      <nav id="folder-tree" class="card" aria-label="폴더"></nav>
+        <div class="columns">
+          <nav id="folder-tree" class="card" aria-label="폴더"></nav>
 
-      <section id="todo-panel" class="card">
-        <div class="panel-head">
-          <span id="panel-crumb" class="crumb"></span>
-          <h2 id="panel-title"></h2>
+          <section id="todo-panel" class="card">
+            <div class="panel-head">
+              <span id="panel-crumb" class="crumb"></span>
+              <h2 id="panel-title"></h2>
+            </div>
+
+            <form id="todo-form" autocomplete="off">
+              <div class="form-head">
+                <span class="form-label">폴더</span>
+                <div id="folder-picker" class="folder-picker"></div>
+              </div>
+
+              <input id="todo-text" class="form-text" type="text" placeholder="무엇을 해야 하나요?" aria-label="할 일" required>
+
+              <div class="form-foot">
+                <label class="form-due">
+                  <span class="form-label">마감일</span>
+                  <input id="todo-due" type="date">
+                </label>
+                <label class="repeat-check">
+                  <input id="todo-repeat" type="checkbox"> 반복
+                </label>
+                <div id="repeat-days" class="repeat-days" role="group" aria-label="반복 요일" hidden></div>
+                <button type="submit" class="primary-btn">추가</button>
+              </div>
+            </form>
+
+            <div id="todo-groups"></div>
+          </section>
+
         </div>
-
-        <form id="todo-form" autocomplete="off">
-          <div class="form-head">
-            <span class="form-label">폴더</span>
-            <div id="folder-picker" class="folder-picker"></div>
-          </div>
-
-          <input id="todo-text" class="form-text" type="text" placeholder="무엇을 해야 하나요?" aria-label="할 일" required>
-
-          <div class="form-foot">
-            <label class="form-due">
-              <span class="form-label">마감일</span>
-              <input id="todo-due" type="date">
-            </label>
-            <label class="repeat-check">
-              <input id="todo-repeat" type="checkbox"> 반복
-            </label>
-            <div id="repeat-days" class="repeat-days" role="group" aria-label="반복 요일" hidden></div>
-            <button type="submit" class="primary-btn">추가</button>
-          </div>
-        </form>
-
-        <div id="todo-groups"></div>
-      </section>
+      </div>
 
       <aside class="side">
         <section id="calendar" class="card calendar" aria-label="달력"></section>
@@ -101,7 +106,7 @@
             <span>최근 18주</span>
             <span class="grass-legend" aria-hidden="true">적음
               <span class="grass-cell lv-0"></span><span class="grass-cell lv-1"></span><span class="grass-cell lv-2"></span><span class="grass-cell lv-3"></span><span class="grass-cell lv-4"></span>
-              많음</span>
+                많음</span>
           </div>
         </section>
       </aside>
