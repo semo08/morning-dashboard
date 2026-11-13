@@ -169,12 +169,34 @@ function shortDate(s, withDay = true) {
   return `${d.getMonth() + 1}/${d.getDate()}` + (withDay ? ` (${WEEKDAYS[d.getDay()]})` : "");
 }
 
-// "2026.3.2 ~ 2027.3.1" (end는 포함하지 않으니 하루 전까지)
-function periodLabel(year) {
+// 기간의 마지막 날 (end는 포함하지 않으니 하루 전)
+export function lastDay(year) {
   const last = parse(year.end);
   last.setDate(last.getDate() - 1);
-  const dot = d => `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
-  return `${dot(parse(year.start))} ~ ${dot(last)}`;
+  return todayStr(last);
+}
+
+// "2026.3.2 ~ 2027.3.1"
+export function periodLabel(year) {
+  const dot = s => {
+    const d = parse(s);
+    return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+  };
+  return `${dot(year.start)} ~ ${dot(lastDay(year))}`;
+}
+
+// 이 날짜가 들어 있는 기간을 볼 때 쓰는 기준일. 지난 기간은 마지막 날 기준으로 계산해야 월차가 다 쌓인다
+export function viewDateFor(config, date) {
+  const year = leaveYear(config, parse(date));
+  return year && lastDay(year);
+}
+
+function navButton(text, label, onClick, className = "") {
+  const button = el("button", "cal-nav-btn " + className, text);
+  button.type = "button";
+  button.setAttribute("aria-label", label);
+  button.addEventListener("click", onClick);
+  return button;
 }
 
 function el(tag, className, text) {
@@ -184,8 +206,8 @@ function el(tag, className, text) {
   return node;
 }
 
-// listOpen: 사용 내역을 펼쳤는지
-export function renderLeave(container, { year, usage, listOpen, on }) {
+// listOpen: 사용 내역을 펼쳤는지, isCurrent: 지금 기간인지, canPrev: 앞 기간이 있는지
+export function renderLeave(container, { year, usage, listOpen, isCurrent, canPrev, on }) {
   container.replaceChildren();
   const head = el("div", "leave-head");
   const title = el("h2", "", "연차");
@@ -224,13 +246,19 @@ export function renderLeave(container, { year, usage, listOpen, on }) {
     left < 0 ? el("li", "stat-over", `${fmt(-left)}일 초과`) : el("li", "stat-left", `남은 ${fmt(left)}일`),
   );
 
-  const meta = el("p", "leave-meta");
-  meta.append(
-    el("span", "", `${periodLabel(year)} · ${year.custom ? "직접 입력" : year.note}`),
-    el("span", "", `다음 발생 ${shortDate(year.next.date, false)} · ${year.next.text}`),
-  );
+  // 기간 넘기기: ‹ 2025.9.22 ~ 2026.9.21 › (지난 기간에 쓴 연차도 볼 수 있게)
+  const period = el("div", "leave-period");
+  const prev = navButton("‹", "이전 기간", () => on.move(-1));
+  prev.disabled = !canPrev;
+  const label = el("span", "num leave-period-label", periodLabel(year));
+  period.append(prev, label, navButton("›", "다음 기간", () => on.move(1)));
+  if (!isCurrent) period.append(navButton("지금", "지금 기간으로", on.current, "leave-now"));
 
-  container.append(bar, stats, meta);
+  const meta = el("p", "leave-meta");
+  meta.append(el("span", "", year.custom ? "직접 입력" : year.note));
+  if (isCurrent) meta.append(el("span", "", `다음 발생 ${shortDate(year.next.date, false)} · ${year.next.text}`));
+
+  container.append(bar, stats, period, meta);
 
   // 사용 내역은 눌러서 펼치고 접는다
   if (usage.entries.length) {

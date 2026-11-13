@@ -14,7 +14,9 @@ import { createCard, isSentToday, renderBoard } from "./board.js";
 import { renderMemo } from "./memo.js";
 import { createDday, renderDdays } from "./dday.js";
 import { MAX_WEEKS, recordDone, renderGrass, seedHistory, streak } from "./history.js";
-import { DEFAULT_LEAVE_SETTINGS, createLeave, entryDays, fmt, leaveDates, leaveUsage, leaveYear, renderLeave } from "./leave.js";
+import {
+  DEFAULT_LEAVE_SETTINGS, createLeave, entryDays, fmt, leaveDates, leaveUsage, leaveYear, periodLabel, renderLeave, viewDateFor,
+} from "./leave.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
 import { exportData, importData, readBackup } from "./backup.js";
 import { PHOTO_KEY, applyPhoto, removePhoto, renderPhotoPicker, resizePhoto, savePhoto } from "./background.js";
@@ -49,6 +51,7 @@ let editingDdayId = null;
 let editingLeaveId = null;
 let grassWeeks = 18;
 let leaveListOpen = false;   // 연차 사용 내역: 열 때마다 접힌 채로 시작
+let leaveView = null;        // 보고 있는 연차 기간의 기준일 (null이면 지금 기간)
 
 const $ = id => document.getElementById(id);
 const nav = $("folder-tree");
@@ -358,12 +361,34 @@ function saveLeaves() {
 }
 
 function renderLeaveCard() {
-  const year = leaveYear(settings.leave);
+  const current = leaveYear(settings.leave);
+  let year = leaveView ? leaveYear(settings.leave, new Date(leaveView + "T00:00:00")) : current;
+  if (!year || year.start === current?.start) {
+    leaveView = null;
+    year = current;
+  }
   renderLeave($("leave"), {
     year,
     usage: year && leaveUsage(leaves, holidays, year),
     listOpen: leaveListOpen,
+    isCurrent: year === current,
+    canPrev: Boolean(year) && year.start > settings.leave.hireDate,
     on: {
+      // 앞 기간: 지금 기간 시작 전날, 뒤 기간: 지금 기간 끝난 날이 들어 있는 기간
+      move: delta => {
+        const date = delta < 0 ? (() => {
+          const d = new Date(year.start + "T00:00:00");
+          d.setDate(d.getDate() - 1);
+          return todayStr(d);
+        })() : year.end;
+        leaveView = viewDateFor(settings.leave, date);
+        renderLeaveCard();
+        $("leave").querySelector(`[aria-label="${delta < 0 ? "이전" : "다음"} 기간"]`)?.focus();
+      },
+      current: () => {
+        leaveView = null;
+        renderLeaveCard();
+      },
       edit: openLeaveDialog,
       setup: openLeaveSettings,
       toggleList: () => {
@@ -373,7 +398,7 @@ function renderLeaveCard() {
       },
     },
   });
-  renderLeaveSettings(year);
+  renderLeaveSettings(current);
 }
 
 // 꾸미기 패널의 연차 칸. 직접 넣은 개수가 없으면 비워두고 법정 개수를 흐리게 보여준다
@@ -469,6 +494,16 @@ leaveForm.addEventListener("submit", e => {
   else leaves.push(createLeave(values));
   saveLeaves();
   leaveDialog.close();
+  // 저장한 날짜가 있는 기간을 보여준다 (지난 기간에 쓴 연차를 넣었을 때)
+  const view = viewDateFor(settings.leave, values.start);
+  if (view) {
+    const year = leaveYear(settings.leave, new Date(view + "T00:00:00"));
+    const current = leaveYear(settings.leave);
+    leaveView = year.start === current?.start ? null : view;
+    if (leaveView) showToast(`${periodLabel(year)} 기간에 넣었어요`);
+  } else if (settings.leave.hireDate) {
+    showToast("입사일 전 날짜라 연차 계산에는 들어가지 않아요");
+  }
   renderLeaveCard();
   renderCal();
 });
