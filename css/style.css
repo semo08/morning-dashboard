@@ -137,6 +137,8 @@
   --grass-2: #A8CBB3;
   --grass-3: #76A688;
   --grass-4: #4A7C5E;
+  --leave: #7A68B8;        /* 연차: 쓴 것 */
+  --leave-plan: #B8ACE0;   /* 연차: 예정 (아직 안 쓴 것) */
   --work-bg: #E6EDF5;
   --work-text: #36577D;
   --work-dot: #8EA9C6;
@@ -415,6 +417,11 @@ h1, h2 { margin: 0; }
 .file-input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .file-pick:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
 
+.settings-leave { flex: 1 1 300px; }
+.leave-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.leave-custom { grid-column: 1 / -1; }
+.settings-leave .settings-hint { margin: 0; }
+
 .settings-data { flex: 1 1 260px; }
 .settings-hint { margin: -4px 0 12px; font-size: 13px; color: var(--muted); }
 .data-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -584,6 +591,7 @@ h1, h2 { margin: 0; }
 .dialog-field output { margin-left: 4px; color: var(--text); }
 .dialog-field input[type="text"],
 .dialog-field input[type="date"],
+.dialog-field input[type="number"],
 .dialog-field select {
   min-height: 40px;
   padding: 0 10px;
@@ -593,6 +601,9 @@ h1, h2 { margin: 0; }
   font-size: 15px;
 }
 .dialog-field input[type="range"] { accent-color: var(--primary); }
+
+.dialog-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dialog-row [hidden] { display: none; }
 
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px; }
 .dialog-actions .primary-btn { margin-left: 0; }
@@ -1135,7 +1146,7 @@ button.tag:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text, 
   color: var(--muted);
 }
 
-/* ── 오른쪽: 진행률 ── */
+/* ── 오른쪽 열 ── */
 .side { display: flex; flex-direction: column; gap: 24px; }
 
 /* ── 오른쪽: 달력 ── */
@@ -1197,6 +1208,9 @@ button.tag:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text, 
   cursor: pointer;
 }
 .cal-day:hover { background: var(--soft); }
+/* 연차 쓴 날: 하루는 칸 전체, 반차·반반차는 아래 절반만 */
+.cal-day.leave { background: color-mix(in srgb, var(--leave-plan) 45%, transparent); }
+.cal-day.leave-part { background: linear-gradient(to top, color-mix(in srgb, var(--leave-plan) 45%, transparent) 50%, transparent 50%); }
 .cal-day.today { background: var(--select); color: var(--select-text); font-weight: 700; }
 .cal-day.selected { background: var(--primary); color: var(--primary-text); }
 
@@ -1242,17 +1256,98 @@ button.tag:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text, 
 }
 .progress-stat, .progress-empty { color: var(--muted); }
 
-/* ── 오른쪽: 잔디 ── */
+/* ── 오른쪽: 연차 ── */
+.leave { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.leave-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.leave-head h2 { font-size: 18px; }
+.leave-total strong { font-size: 24px; font-weight: 700; }
+.leave-total span { margin-left: 2px; font-size: 14px; color: var(--muted); }
+.leave-empty { margin: 0; font-size: 14px; color: var(--muted); }
+.leave > .ghost-btn, .leave > .dashed-btn { align-self: flex-start; }
+
+.leave-bar { display: flex; }
+.leave-used { background: var(--leave); transition: width 0.3s; }
+/* 예정: 같은 계열의 옅은 빗금 */
+.leave-planned {
+  background: repeating-linear-gradient(-45deg, var(--leave-plan) 0 4px, color-mix(in srgb, var(--leave-plan) 55%, transparent) 4px 8px);
+  transition: width 0.3s;
+}
+
+.leave-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.leave-stats li { display: flex; align-items: center; gap: 6px; }
+.leave-stats li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--track); }
+.leave-stats .stat-used::before { background: var(--leave); }
+.leave-stats .stat-planned::before { background: var(--leave-plan); }
+.leave-stats .stat-left::before { box-shadow: inset 0 0 0 1px var(--line); }
+.leave-stats .stat-over { color: var(--warn-text); font-weight: 600; }
+.leave-stats .stat-over::before { background: var(--warn-text); }
+
+.leave-meta { margin: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
+
+.leave-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--line);
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.leave-item {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.leave-item:hover { background: var(--soft); }
+.leave-date { font-weight: 600; }
+.leave-kind { color: var(--muted); }
+.leave-memo { flex-basis: 100%; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leave-badge {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--leave-plan) 40%, transparent);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.leave-preview { min-height: 1.4em; font-size: 14px; font-weight: 600; color: var(--leave); }
+.leave-preview.warn { color: var(--warn-text); }
+
+/* ── 잔디 (왼쪽 열, 할 일 위) ── */
 .grass { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .grass-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .grass-head h2 { font-size: 18px; }
 .grass-streak { font-size: 14px; font-weight: 700; color: var(--streak); }
 
-/* 7줄(일~토) × 18주, 열 방향으로 채운다. 칸 크기는 카드 폭에 맞춰 늘어난다 */
+/* 7줄(일~토) × 몇 주(main.js가 카드 폭으로 정한다), 열 방향으로 채운다 */
 .grass-grid {
   display: grid;
   grid-template-rows: repeat(7, auto);
-  grid-template-columns: repeat(18, 1fr);
+  grid-template-columns: repeat(var(--weeks, 18), minmax(0, 18px));
+  justify-content: space-between;   /* 칸은 18px까지만 커지고 남는 폭은 칸 사이로 */
   grid-auto-flow: column;
   gap: 3px;
 }
@@ -1326,6 +1421,7 @@ button.tag:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text, 
   .clock { font-size: 44px; }
   .layout, .main { gap: 16px; }
   .columns { grid-template-columns: 1fr; gap: 16px; }
+  .leave-fields, .dialog-row { grid-template-columns: 1fr; }
   #todo-panel { padding: 20px 16px; }
   .todo-delete, .meta-due-empty { opacity: 1; }
 }

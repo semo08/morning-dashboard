@@ -1,7 +1,7 @@
-// 잔디: 날짜별 완료 개수 { "2026-11-12": 3 } 를 기록하고 최근 18주를 그린다
+// 잔디: 날짜별 완료 개수 { "2026-11-12": 3 } 를 기록하고 최근 몇 주(카드 폭만큼)를 그린다
 import { todayStr } from "./todos.js";
 
-const WEEKS = 18;
+export const MAX_WEEKS = 53;   // 1년
 
 // 완료하면 +1, 완료를 취소하면 그 날짜에서 -1. 새 객체를 돌려준다
 export function recordDone(history, date, delta) {
@@ -47,15 +47,16 @@ function level(count) {
   return 4;
 }
 
-export function renderGrass(container, history) {
+export function renderGrass(container, history, weeks = 18) {
   container.replaceChildren();
   const today = todayStr();
 
-  // 이번 주 일요일에서 17주 전 일요일부터
-  const start = addDays(new Date(), -new Date().getDay() - (WEEKS - 1) * 7);
+  // 이번 주 일요일에서 (weeks - 1)주 전 일요일부터
+  const start = addDays(new Date(), -new Date().getDay() - (weeks - 1) * 7);
+  container.style.setProperty("--weeks", weeks);
   let total = 0;
 
-  for (let i = 0; i < WEEKS * 7; i++) {
+  for (let i = 0; i < weeks * 7; i++) {
     const date = todayStr(addDays(start, i));
     const cell = document.createElement("span");
     cell.className = "grass-cell";
@@ -71,5 +72,5 @@ export function renderGrass(container, history) {
     container.append(cell);
   }
 
-  container.setAttribute("aria-label", `최근 ${WEEKS}주 동안 ${total}개 완료`);
+  container.setAttribute("aria-label", `최근 ${weeks}주 동안 ${total}개 완료`);
 }

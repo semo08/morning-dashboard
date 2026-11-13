@@ -4,8 +4,8 @@ import { todayStr } from "./todos.js";
 
 const APP = "morning-dashboard";
 const VERSION = 1;
-const JSON_KEYS = ["folders", "todos", "expandedFolders", "settings", "board", "memo", "ddays", "history"];
-const ARRAY_KEYS = ["folders", "todos", "expandedFolders", "board", "ddays"];
+const JSON_KEYS = ["folders", "todos", "expandedFolders", "settings", "board", "memo", "ddays", "history", "leaves"];
+const ARRAY_KEYS = ["folders", "todos", "expandedFolders", "board", "ddays", "leaves"];
 
 export function exportData() {
   const data = {};

@@ -1,5 +1,6 @@
-// 달력: 한 달 보기. 안 끝낸 할 일의 마감일에 점을 찍고, 공휴일은 빨간 날로
+// 달력: 한 달 보기. 안 끝낸 할 일의 마감일에 점을 찍고, 공휴일은 빨간 날로, 연차 쓴 날은 보라색으로
 import { isRepeating, isVisible, todayStr } from "./todos.js";
+import { unitLabel } from "./leave.js";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -17,7 +18,7 @@ function dueCounts(todos) {
   return counts;
 }
 
-export function renderCalendar(container, { year, month, todos, holidays, selectedDate, on }) {
+export function renderCalendar(container, { year, month, todos, holidays, leaves, selectedDate, on }) {
   container.replaceChildren();
   const today = todayStr();
   const now = new Date();
@@ -61,6 +62,7 @@ export function renderCalendar(container, { year, month, todos, holidays, select
     const date = dateStr(year, month, day);
     const count = counts[date] ?? 0;
     const holiday = holidays[date];
+    const leave = leaves[date];   // 1 / 0.5 / 0.25
 
     const button = document.createElement("button");
     button.type = "button";
@@ -72,9 +74,10 @@ export function renderCalendar(container, { year, month, todos, holidays, select
       button.classList.add("holiday");
       button.title = holiday;
     }
+    if (leave) button.classList.add(leave >= 1 ? "leave" : "leave-part");
     button.setAttribute("aria-pressed", String(date === selectedDate));
     button.setAttribute("aria-label",
-      `${month + 1}월 ${day}일` + (date === today ? ", 오늘" : "") + (holiday ? `, ${holiday}` : "") + (count ? `, 마감 ${count}개` : ""));
+      `${month + 1}월 ${day}일` + (date === today ? ", 오늘" : "") + (holiday ? `, ${holiday}` : "") + (leave ? `, ${unitLabel(Math.min(leave, 1))}` : "") + (count ? `, 마감 ${count}개` : ""));
     if (date === today) button.setAttribute("aria-current", "date");
 
     const num = document.createElement("span");

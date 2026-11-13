@@ -41,6 +41,27 @@
         <h2>배경 사진</h2>
         <div id="photo-picker" class="photo-picker"></div>
       </div>
+      <div class="settings-leave">
+        <h2>연차</h2>
+        <div class="leave-fields">
+          <label class="dialog-field">
+            <span>입사일</span>
+            <input id="hire-date" type="date">
+          </label>
+          <label class="dialog-field">
+            <span>기준</span>
+            <select id="leave-basis">
+              <option value="hire">입사일 기준</option>
+              <option value="fiscal">회계연도 (1월 1일)</option>
+            </select>
+          </label>
+          <label class="dialog-field leave-custom">
+            <span>이번 기간에 받은 연차 <small>(회사 기준이 다를 때만)</small></span>
+            <input id="leave-custom" type="number" min="0" max="100" step="0.25" inputmode="decimal">
+          </label>
+        </div>
+        <p id="leave-hint" class="settings-hint"></p>
+      </div>
       <div class="settings-data">
         <h2>데이터 옮기기</h2>
         <p class="settings-hint">다른 PC나 크롬 확장으로 옮길 때 파일로 내보내고 가져와요</p>
@@ -60,6 +81,20 @@
             <button id="board-add" type="button" class="dashed-btn">+ 작업 추가</button>
           </div>
           <div id="board-grid" class="board-grid"></div>
+        </section>
+
+        <section class="card grass" aria-labelledby="grass-title">
+          <div class="grass-head">
+            <h2 id="grass-title">잔디</h2>
+            <span id="grass-streak" class="grass-streak"></span>
+          </div>
+          <div id="grass-grid" class="grass-grid" role="img"></div>
+          <div class="grass-foot">
+            <span id="grass-range">최근 18주</span>
+            <span class="grass-legend" aria-hidden="true">적음
+              <span class="grass-cell lv-0"></span><span class="grass-cell lv-1"></span><span class="grass-cell lv-2"></span><span class="grass-cell lv-3"></span><span class="grass-cell lv-4"></span>
+                많음</span>
+          </div>
         </section>
 
         <div class="columns">
@@ -109,19 +144,7 @@
           <ul id="progress-stats" class="progress-stats"></ul>
         </section>
 
-        <section class="card grass" aria-labelledby="grass-title">
-          <div class="grass-head">
-            <h2 id="grass-title">잔디</h2>
-            <span id="grass-streak" class="grass-streak"></span>
-          </div>
-          <div id="grass-grid" class="grass-grid" role="img"></div>
-          <div class="grass-foot">
-            <span>최근 18주</span>
-            <span class="grass-legend" aria-hidden="true">적음
-              <span class="grass-cell lv-0"></span><span class="grass-cell lv-1"></span><span class="grass-cell lv-2"></span><span class="grass-cell lv-3"></span><span class="grass-cell lv-4"></span>
-                많음</span>
-          </div>
-        </section>
+        <section id="leave" class="card leave" aria-labelledby="leave-title"></section>
       </aside>
     </div>
   </div>
@@ -189,6 +212,40 @@
       </label>
       <div class="dialog-actions">
         <button id="dday-delete" type="button" class="danger-btn">삭제</button>
+        <button type="button" class="ghost-btn" data-close>취소</button>
+        <button type="submit" class="primary-btn">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="leave-dialog" class="dialog" aria-labelledby="leave-dialog-title">
+    <form id="leave-form" autocomplete="off">
+      <h2 id="leave-dialog-title">연차 쓰기</h2>
+      <label class="dialog-field">
+        <span>종류</span>
+        <select name="unit">
+          <option value="1">연차 (하루)</option>
+          <option value="0.5">반차 (0.5일)</option>
+          <option value="0.25">반반차 (0.25일)</option>
+        </select>
+      </label>
+      <div class="dialog-row">
+        <label class="dialog-field">
+          <span>날짜</span>
+          <input name="start" type="date" required>
+        </label>
+        <label id="leave-end-field" class="dialog-field">
+          <span>끝나는 날 <small>(여러 날일 때)</small></span>
+          <input name="end" type="date">
+        </label>
+      </div>
+      <output id="leave-preview" class="leave-preview"></output>
+      <label class="dialog-field">
+        <span>메모 <small>(선택)</small></span>
+        <input name="memo" type="text" maxlength="40" placeholder="예: 가족 여행">
+      </label>
+      <div class="dialog-actions">
+        <button id="leave-delete" type="button" class="danger-btn">삭제</button>
         <button type="button" class="ghost-btn" data-close>취소</button>
         <button type="submit" class="primary-btn">저장</button>
       </div>

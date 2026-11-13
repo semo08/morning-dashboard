@@ -13,7 +13,8 @@ import { cachedHolidays, refreshHolidays } from "./holidays.js";
 import { createCard, isSentToday, renderBoard } from "./board.js";
 import { renderMemo } from "./memo.js";
 import { createDday, renderDdays } from "./dday.js";
-import { recordDone, renderGrass, seedHistory, streak } from "./history.js";
+import { MAX_WEEKS, recordDone, renderGrass, seedHistory, streak } from "./history.js";
+import { DEFAULT_LEAVE_SETTINGS, createLeave, entryDays, fmt, leaveDates, leaveUsage, leaveYear, renderLeave } from "./leave.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
 import { exportData, importData, readBackup } from "./backup.js";
 import { PHOTO_KEY, applyPhoto, removePhoto, renderPhotoPicker, resizePhoto, savePhoto } from "./background.js";
@@ -26,6 +27,7 @@ if (migrateRepeats(todos)) save("todos", todos);
 let board = load("board", []);
 let memo = load("memo", null);       // { text, writtenAt }
 let ddays = load("ddays", []);
+let leaves = load("leaves", []);   // [{ id, start, end, unit, memo }]
 let holidays = cachedHolidays();   // { "2026-09-25": "추석" }
 let history = load("history", null);   // 날짜별 완료 개수 { "2026-11-12": 3 }
 if (!history) {
@@ -34,6 +36,7 @@ if (!history) {
 }
 let expanded = load("expandedFolders", topFolders(folders).map(f => f.id));
 const settings = { theme: "sunny", name: "", ...load("settings", {}) };
+settings.leave = { ...DEFAULT_LEAVE_SETTINGS, ...settings.leave };
 let selectedFolder = "all";
 let editingFolders = false;
 let editingTodo = null;   // 고치는 중인 할 일 { id, field, level }
@@ -43,6 +46,8 @@ const deletedStack = [];    // Ctrl+Z 되돌리기용 { todo, index }
 let editingCardId = null;   // 작업 카드 창: 수정 중인 카드 (새 카드면 null)
 let cardPickPath = [];
 let editingDdayId = null;
+let editingLeaveId = null;
+let grassWeeks = 18;
 
 const $ = id => document.getElementById(id);
 const nav = $("folder-tree");
@@ -63,6 +68,8 @@ const memoDialog = $("memo-dialog");
 const memoForm = $("memo-form");
 const ddayDialog = $("dday-dialog");
 const ddayForm = $("dday-form");
+const leaveDialog = $("leave-dialog");
+const leaveForm = $("leave-form");
 
 function saveTodos() {
   save("todos", todos);
@@ -291,13 +298,15 @@ function renderMain() {
   renderBoardSection();
   renderCal();
   renderProgress();
+  renderLeaveCard();
   renderHistory();
   renderDdayChips();
   updateHeader();
 }
 
 function renderHistory() {
-  renderGrass($("grass-grid"), history);
+  renderGrass($("grass-grid"), history, grassWeeks);
+  $("grass-range").textContent = grassWeeks === MAX_WEEKS ? "최근 1년" : `최근 ${grassWeeks}주`;
   const days = streak(history);
   $("grass-streak").textContent = days ? `${days}일 연속` : "";
 }
@@ -339,6 +348,129 @@ $("dday-delete").addEventListener("click", () => {
   save("ddays", ddays);
   ddayDialog.close();
   renderDdayChips();
+});
+
+// ── 연차 ──
+
+function saveLeaves() {
+  save("leaves", leaves);
+}
+
+function renderLeaveCard() {
+  const year = leaveYear(settings.leave);
+  renderLeave($("leave"), {
+    year,
+    usage: year && leaveUsage(leaves, holidays, year),
+    on: { edit: openLeaveDialog, setup: openLeaveSettings },
+  });
+  renderLeaveSettings(year);
+}
+
+// 꾸미기 패널의 연차 칸. 직접 넣은 개수가 없으면 비워두고 법정 개수를 흐리게 보여준다
+function renderLeaveSettings(year = leaveYear(settings.leave)) {
+  $("hire-date").value = settings.leave.hireDate;
+  $("hire-date").max = todayStr();
+  $("leave-basis").value = settings.leave.basis;
+  const custom = $("leave-custom");
+  custom.disabled = !year;
+  if (document.activeElement !== custom) custom.value = year?.custom ? year.granted : "";
+  custom.placeholder = year ? fmt(year.legal) : "";
+  $("leave-hint").textContent = year
+    ? `근로기준법으로는 ${fmt(year.legal)}일이에요. 비워두면 법정 개수로 계산해요.`
+    : "입사일을 넣으면 근로기준법대로 계산해요. 반차·반반차는 0.5일·0.25일로 세요.";
+}
+
+function openLeaveSettings() {
+  settingsPanel.hidden = false;
+  settingsToggle.setAttribute("aria-expanded", "true");
+  settingsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  $("hire-date").focus({ preventScroll: true });
+}
+
+function setLeaveSetting(changes) {
+  Object.assign(settings.leave, changes);
+  saveSettings();
+  renderLeaveCard();
+  renderCal();
+}
+
+$("hire-date").addEventListener("change", e => setLeaveSetting({ hireDate: e.target.value }));
+$("leave-basis").addEventListener("change", e => setLeaveSetting({ basis: e.target.value }));
+// 직접 넣은 개수는 지금 기간에만 붙여둔다
+$("leave-custom").addEventListener("change", e => {
+  const year = leaveYear(settings.leave);
+  if (!year) return;
+  const days = e.target.value === "" ? NaN : Number(e.target.value);
+  setLeaveSetting({ custom: Number.isFinite(days) && days >= 0 ? { start: year.start, days } : null });
+});
+
+function leaveFormValues() {
+  const f = leaveForm.elements;
+  const unit = Number(f.unit.value);
+  const start = f.start.value;
+  // 반차·반반차는 하루만
+  const end = unit === 1 && f.end.value > start ? f.end.value : start;
+  return { start, end, unit, memo: f.memo.value.trim() };
+}
+
+// 고른 기간에서 주말·공휴일을 빼고 며칠 쓰는지
+function updateLeavePreview() {
+  const f = leaveForm.elements;
+  const isDay = f.unit.value === "1";
+  $("leave-end-field").hidden = !isDay;
+  f.end.min = f.start.value;
+  const preview = $("leave-preview");
+  const values = leaveFormValues();
+  if (!values.start) {
+    preview.textContent = "";
+    return;
+  }
+  const days = entryDays(values, holidays);
+  const span = Math.round((new Date(values.end) - new Date(values.start)) / 86400000) + 1;
+  preview.classList.toggle("warn", days.length === 0);
+  if (days.length === 0) preview.textContent = "주말이나 공휴일이라 연차를 쓰지 않아도 돼요";
+  else if (span > days.length) preview.textContent = `${fmt(days.length * values.unit)}일 써요 (주말·공휴일 ${span - days.length}일 빼고)`;
+  else preview.textContent = `${fmt(days.length * values.unit)}일 써요`;
+}
+
+function openLeaveDialog(id) {
+  const entry = leaves.find(l => l.id === id);
+  editingLeaveId = entry ? entry.id : null;
+  $("leave-dialog-title").textContent = entry ? "연차 고치기" : "연차 쓰기";
+  $("leave-delete").hidden = !entry;
+  const f = leaveForm.elements;
+  f.unit.value = String(entry?.unit ?? 1);
+  f.start.value = entry?.start ?? todayStr();
+  f.end.value = entry && entry.end !== entry.start ? entry.end : "";
+  f.memo.value = entry?.memo ?? "";
+  updateLeavePreview();
+  leaveDialog.showModal();
+  f.start.focus();
+}
+
+leaveForm.addEventListener("input", updateLeavePreview);
+
+leaveForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const values = leaveFormValues();
+  if (!values.start || entryDays(values, holidays).length === 0) return;
+  const entry = leaves.find(l => l.id === editingLeaveId);
+  if (entry) Object.assign(entry, values);
+  else leaves.push(createLeave(values));
+  saveLeaves();
+  leaveDialog.close();
+  renderLeaveCard();
+  renderCal();
+});
+
+$("leave-delete").addEventListener("click", () => {
+  const entry = leaves.find(l => l.id === editingLeaveId);
+  if (!entry || !confirm("이 연차 기록을 삭제할까요?")) return;
+  leaves = leaves.filter(l => l.id !== entry.id);
+  saveLeaves();
+  leaveDialog.close();
+  renderLeaveCard();
+  renderCal();
 });
 
 function renderBoardSection() {
@@ -471,6 +603,7 @@ function renderCal() {
     ...calView,
     todos,
     holidays,
+    leaves: leaveDates(leaves, holidays),
     selectedDate: dueInput.value,
     on: {
       move: delta => {
@@ -570,6 +703,7 @@ function refreshDay() {
     if (!days) return;
     holidays = days;
     renderCal();
+    renderLeaveCard();   // 공휴일은 연차로 세지 않으니 다시 센다
   });
 }
 
@@ -708,3 +842,11 @@ if (pendingToast) {
   showToast(pendingToast);
 }
 startClock(updateHeader, refreshDay);
+
+// 잔디는 카드 폭에 들어가는 만큼 (한 칸 14px 이상, 최대 1년)
+new ResizeObserver(([entry]) => {
+  const weeks = Math.max(8, Math.min(MAX_WEEKS, Math.floor((entry.contentRect.width + 3) / 17)));
+  if (weeks === grassWeeks) return;
+  grassWeeks = weeks;
+  renderHistory();
+}).observe($("grass-grid"));
