@@ -171,6 +171,7 @@
   --space-6: 24px;
   --space-7: 32px;
   --radius-sm: 8px;
+  --radius-control: 10px;   /* 버튼·입력칸 */
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
@@ -254,6 +255,10 @@ body::before {
 }
 
 button, input, select { font: inherit; color: inherit; }
+:where(button, select, a, input[type="date"], input[type="checkbox"], input[type="range"]):focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
 h1, h2 { margin: 0; }
 
 .num { font-family: var(--font-num); }
@@ -444,7 +449,7 @@ h1, h2 { margin: 0; }
 .danger-btn {
   min-height: 40px;
   padding: 0 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -540,7 +545,7 @@ h1, h2 { margin: 0; }
 .board-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .board-actions .ghost-btn,
 .board-actions .primary-btn { min-height: 36px; font-size: 13px; }
-.primary-btn.small { margin-left: 0; padding: 0 12px; border-radius: 10px; }
+.primary-btn.small { margin-left: 0; padding: 0 12px; }
 
 /* ── 창 (작업 카드, 퇴근 체크아웃) ── */
 .dialog {
@@ -583,7 +588,7 @@ h1, h2 { margin: 0; }
   min-height: 40px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--soft);
   font-size: 15px;
 }
@@ -658,7 +663,7 @@ h1, h2 { margin: 0; }
   min-height: 36px;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--soft);
   font-size: 14px;
 }
@@ -806,11 +811,11 @@ h1, h2 { margin: 0; }
 
 .form-head select,
 .form-due input {
-  min-height: 34px;
+  min-height: 36px;
   max-width: 100%;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-control);
   background: var(--field);
   font-size: 14px;
 }
@@ -840,12 +845,105 @@ h1, h2 { margin: 0; }
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
+  min-height: 36px;
   font-size: 14px;
   color: var(--muted);
   cursor: pointer;
 }
-.repeat-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary); }
+/* 반복: iOS 스위치. 손잡이는 radial-gradient로 그려서 켜면 오른쪽으로 민다 */
+.repeat-check input {
+  appearance: none;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  border-radius: var(--radius-full);
+  background:
+    radial-gradient(circle, #FFFFFF 0 8px, transparent 8.5px) 0 50% / 22px 22px no-repeat,
+    var(--track);
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer;
+  transition: background-position var(--duration-fast) var(--ease-out), background-color var(--duration-fast);
+}
+.repeat-check input:checked { background-position: 100% 50%; background-color: var(--done); box-shadow: none; }
+.repeat-check:has(input:checked) { color: var(--text); }
+
+.form-foot .primary-btn { min-height: 36px; }
+
+/* 날짜 칸의 달력 아이콘: 검은 기본 아이콘을 글자색보다 옅게 */
+.form-due input::-webkit-calendar-picker-indicator,
+.dialog-field input::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+.form-due input::-webkit-calendar-picker-indicator:hover,
+.dialog-field input::-webkit-calendar-picker-indicator:hover { opacity: 0.9; }
+
+/* ── 선택 상자 ── 화살표는 기본 대신 가는 꺾쇠 */
+.form-head select,
+.dialog-field select {
+  appearance: none;
+  padding-right: 30px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+.form-head select:hover,
+.dialog-field select:hover { border-color: color-mix(in srgb, var(--text) 28%, transparent); }
+
+/* 크롬(확장)은 펼친 목록까지 꾸밀 수 있다: 유리 목록 + 체크 표시 */
+@supports (appearance: base-select) {
+  .form-head select,
+  .dialog-field select {
+    appearance: base-select;
+    display: inline-flex;
+    align-items: center;
+    padding-right: 10px;
+    background-image: none;
+  }
+  .form-head select::picker-icon,
+  .dialog-field select::picker-icon {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin: -4px 2px 0 10px;
+    border-right: 1.6px solid var(--muted);
+    border-bottom: 1.6px solid var(--muted);
+    rotate: 45deg;
+    transition: rotate var(--duration-fast) var(--ease-out), margin var(--duration-fast);
+  }
+  .form-head select:open::picker-icon,
+  .dialog-field select:open::picker-icon { rotate: 225deg; margin-top: 3px; }
+
+  .form-head select::picker(select),
+  .dialog-field select::picker(select) {
+    appearance: base-select;
+    min-width: anchor-size(width);
+    margin-top: 6px;
+    padding: 4px;
+    border: 1px solid var(--rim);
+    border-radius: var(--radius-md);
+    background: var(--glass-thick);
+    color: var(--text);
+    -webkit-backdrop-filter: var(--blur);
+    backdrop-filter: var(--blur);
+    box-shadow: 0 16px 36px -14px rgb(var(--shadow-rgb) / 0.4);
+  }
+  .form-head option,
+  .dialog-field option {
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .form-head option:is(:hover, :focus),
+  .dialog-field option:is(:hover, :focus) { background: color-mix(in srgb, var(--text) 8%, transparent); outline: none; }
+  .form-head option:checked,
+  .dialog-field option:checked { font-weight: 600; }
+  .form-head option::checkmark,
+  .dialog-field option::checkmark { order: 1; margin-left: auto; padding-left: 12px; color: var(--done); }
+}
 
 .repeat-days { display: flex; flex-wrap: wrap; gap: 4px; }
 .repeat-days[hidden] { display: none; }
@@ -881,7 +979,7 @@ h1, h2 { margin: 0; }
   margin-left: auto;
   padding: 0 22px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: var(--primary);
   color: var(--primary-text);
   font-size: 15px;
