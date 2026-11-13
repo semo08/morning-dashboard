@@ -184,7 +184,8 @@ function el(tag, className, text) {
   return node;
 }
 
-export function renderLeave(container, { year, usage, on }) {
+// listOpen: 사용 내역을 펼쳤는지
+export function renderLeave(container, { year, usage, listOpen, on }) {
   container.replaceChildren();
   const head = el("div", "leave-head");
   const title = el("h2", "", "연차");
@@ -231,8 +232,19 @@ export function renderLeave(container, { year, usage, on }) {
 
   container.append(bar, stats, meta);
 
+  // 사용 내역은 눌러서 펼치고 접는다
   if (usage.entries.length) {
+    const toggle = el("button", "leave-toggle");
+    toggle.type = "button";
+    toggle.setAttribute("aria-expanded", String(listOpen));
+    toggle.setAttribute("aria-controls", "leave-list");
+    toggle.append(el("span", "", "사용 내역"), el("span", "num leave-count", usage.entries.length));
+    toggle.addEventListener("click", on.toggleList);
+    container.append(toggle);
+  }
+  if (usage.entries.length && listOpen) {
     const list = el("ul", "leave-list");
+    list.id = "leave-list";
     for (const { entry, amount, planned: isPlanned } of usage.entries) {
       const item = el("li");
       const button = el("button", "leave-item" + (isPlanned ? " planned" : ""));

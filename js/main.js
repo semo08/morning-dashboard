@@ -48,6 +48,7 @@ let cardPickPath = [];
 let editingDdayId = null;
 let editingLeaveId = null;
 let grassWeeks = 18;
+let leaveListOpen = load("leaveListOpen", false);   // 연차 사용 내역 펼침
 
 const $ = id => document.getElementById(id);
 const nav = $("folder-tree");
@@ -361,7 +362,17 @@ function renderLeaveCard() {
   renderLeave($("leave"), {
     year,
     usage: year && leaveUsage(leaves, holidays, year),
-    on: { edit: openLeaveDialog, setup: openLeaveSettings },
+    listOpen: leaveListOpen,
+    on: {
+      edit: openLeaveDialog,
+      setup: openLeaveSettings,
+      toggleList: () => {
+        leaveListOpen = !leaveListOpen;
+        save("leaveListOpen", leaveListOpen);
+        renderLeaveCard();
+        $("leave").querySelector(".leave-toggle").focus();
+      },
+    },
   });
   renderLeaveSettings(year);
 }
