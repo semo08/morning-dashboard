@@ -4,7 +4,7 @@
 > 기존 Momentum 클론(Chrome-application)을 새 repo에서 다시 만든다.
 
 - 디자인 시안: [아침 투두 대시보드](https://claude.ai/artifact/MhSZHoLMDAEZwXYQvNEdeq)
-- 형태: 웹으로 먼저 만들고, 나중에 크롬 확장(새 탭)으로 바꾼다. 배포(GitHub Pages)는 하지 않는다.
+- 형태: 웹으로 먼저 만들고, 나중에 크롬 확장(툴바 아이콘으로 열기)으로 바꾼다. 배포(GitHub Pages)는 하지 않는다.
 - GitHub repo는 배포용이 아니라 코드 보관·컴퓨터 간 공유용이다.
 - 기술: HTML, CSS, Vanilla JS, localStorage (서버 없음)
 
@@ -23,7 +23,7 @@
 | 4 | D-day | 추가/삭제, 헤더에 칩으로 표시 |
 | 4 | 잔디 + 진행률 | 날짜별 완료 개수 기록, 최근 18주 그래프 |
 | 5 | 배경 사진 | 사진 선택 → 줄여서 저장 |
-| 6 | 크롬 확장 | manifest로 새 탭 화면 교체 |
+| 6 | 크롬 확장 | manifest + 툴바 아이콘을 누르면 대시보드 탭 열기 (새 탭은 그대로) |
 
 **이번 작업 범위 = 1단계 (투두 강화)**
 
@@ -197,7 +197,9 @@ function getGroup(todo) {
   "manifest_version": 3,
   "name": "Morning Dashboard",
   "version": "1.0",
-  "chrome_url_overrides": { "newtab": "index.html" },
+  "action": { "default_title": "Morning Dashboard 열기" },
+  "background": { "service_worker": "service-worker.js" },
+  "host_permissions": ["https://calendar.google.com/*"],
   "icons": { "16": "icons/icon-16.png", "128": "icons/icon-128.png" }
 }
 ```
@@ -205,7 +207,7 @@ function getGroup(todo) {
 1. `chrome://extensions` 접속
 2. 오른쪽 위 **개발자 모드** 켜기
 3. **압축해제된 확장 프로그램 로드** → `morning-dashboard` 폴더 선택
-4. 새 탭을 열면 대시보드가 뜬다.
+4. 툴바에 핀으로 고정한 아이콘을 누르면 대시보드가 뜬다. (처음엔 새 탭 교체였지만, 새 탭마다 뜨는 게 불편해서 아이콘 방식으로 바꿈)
 
 ### 배포가 필요 없는 이유
 - 크롬이 **내 컴퓨터의 폴더를 직접 읽어서** 실행하기 때문에 GitHub Pages 같은 배포가 필요 없다.
