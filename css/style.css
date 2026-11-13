@@ -622,10 +622,12 @@ h1, h2 { margin: 0; }
 
 .columns {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
+/* 왼쪽 좁은 열: 잔디 + 폴더 트리 */
+.left-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 
 /* ── 폴더 트리 ── */
 #folder-tree { padding: 20px 14px; }
@@ -1336,8 +1338,8 @@ button.tag:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text, 
 .leave-preview { min-height: 1.4em; font-size: 14px; font-weight: 600; color: var(--leave); }
 .leave-preview.warn { color: var(--warn-text); }
 
-/* ── 잔디 (왼쪽 열, 할 일 위) ── */
-.grass { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+/* ── 잔디 (폴더 트리 위) ── */
+.grass { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
 .grass-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .grass-head h2 { font-size: 18px; }
 .grass-streak { font-size: 14px; font-weight: 700; color: var(--streak); }
@@ -1421,6 +1423,7 @@ button.tag:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text, 
   .clock { font-size: 44px; }
   .layout, .main { gap: 16px; }
   .columns { grid-template-columns: 1fr; gap: 16px; }
+  .left-col { gap: 16px; }
   .leave-fields, .dialog-row { grid-template-columns: 1fr; }
   #todo-panel { padding: 20px 16px; }
   .todo-delete, .meta-due-empty { opacity: 1; }

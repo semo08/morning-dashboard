@@ -843,9 +843,9 @@ if (pendingToast) {
 }
 startClock(updateHeader, refreshDay);
 
-// 잔디는 카드 폭에 들어가는 만큼 (한 칸 14px 이상, 최대 1년)
+// 잔디는 카드 폭에 들어가는 만큼 (한 칸 12px 이상, 최대 1년)
 new ResizeObserver(([entry]) => {
-  const weeks = Math.max(8, Math.min(MAX_WEEKS, Math.floor((entry.contentRect.width + 3) / 17)));
+  const weeks = Math.max(8, Math.min(MAX_WEEKS, Math.floor((entry.contentRect.width + 3) / 15)));
   if (weeks === grassWeeks) return;
   grassWeeks = weeks;
   renderHistory();
