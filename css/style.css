@@ -1018,7 +1018,20 @@ h1, h2 { margin: 0; }
 }
 
 .cal-weekday { padding-bottom: 4px; font-size: 12px; color: var(--muted); }
-.cal-weekday.sun, .cal-day.sun { color: var(--warn-text); }
+.cal-weekday.sun, .cal-day.sun, .cal-day.holiday { color: var(--warn-text); }
+
+.cal-holidays {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.cal-holidays .num { color: var(--warn-text); font-weight: 600; }
 
 .cal-day {
   position: relative;

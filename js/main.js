@@ -9,6 +9,7 @@ import {
 } from "./todos.js";
 import { renderHeader, startClock } from "./header.js";
 import { renderCalendar } from "./calendar.js";
+import { cachedHolidays, refreshHolidays } from "./holidays.js";
 import { createCard, isSentToday, renderBoard } from "./board.js";
 import { renderMemo } from "./memo.js";
 import { createDday, renderDdays } from "./dday.js";
@@ -25,6 +26,7 @@ if (migrateRepeats(todos)) save("todos", todos);
 let board = load("board", []);
 let memo = load("memo", null);       // { text, writtenAt }
 let ddays = load("ddays", []);
+let holidays = cachedHolidays();   // { "2026-09-25": "추석" }
 let history = load("history", null);   // 날짜별 완료 개수 { "2026-11-12": 3 }
 if (!history) {
   history = seedHistory(todos);         // 처음엔 남아 있는 완료 기록으로 채운다
@@ -453,6 +455,7 @@ function renderCal() {
   renderCalendar($("calendar"), {
     ...calView,
     todos,
+    holidays,
     selectedDate: dueInput.value,
     on: {
       move: delta => {
@@ -547,6 +550,12 @@ function undoDelete() {
 function refreshDay() {
   if (resetRepeats(todos)) saveTodos();
   render();
+  // 공휴일은 오래됐을 때만 새로 받고, 받아오면 달력만 다시 그린다
+  refreshHolidays().then(days => {
+    if (!days) return;
+    holidays = days;
+    renderCal();
+  });
 }
 
 // 반복 요일 칩: 월~일, 처음엔 월~금이 체크되어 있다

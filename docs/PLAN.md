@@ -72,6 +72,7 @@ ddays:    [{ id, title, date }]
 history:  { "2026-11-12": 3 }       // 날짜별 완료 개수
 settings: { theme: "sunny", name: "Sehwa" }
 background: "data:image/jpeg;base64,…" // 배경 사진 (긴 변 1920px로 줄인 JPEG)
+holidays: { fetchedAt: 1763000000000, days: { "2026-09-25": "추석" } } // 구글 캘린더에서 받은 공휴일 (확장에서만, 일주일마다 갱신)
 ```
 
 ---

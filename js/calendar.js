@@ -1,4 +1,4 @@
-// 달력: 한 달 보기. 안 끝낸 할 일의 마감일에 점을 찍는다
+// 달력: 한 달 보기. 안 끝낸 할 일의 마감일에 점을 찍고, 공휴일은 빨간 날로
 import { isRepeating, isVisible, todayStr } from "./todos.js";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -17,7 +17,7 @@ function dueCounts(todos) {
   return counts;
 }
 
-export function renderCalendar(container, { year, month, todos, selectedDate, on }) {
+export function renderCalendar(container, { year, month, todos, holidays, selectedDate, on }) {
   container.replaceChildren();
   const today = todayStr();
   const now = new Date();
@@ -60,6 +60,7 @@ export function renderCalendar(container, { year, month, todos, selectedDate, on
   for (let day = 1; day <= lastDate; day++) {
     const date = dateStr(year, month, day);
     const count = counts[date] ?? 0;
+    const holiday = holidays[date];
 
     const button = document.createElement("button");
     button.type = "button";
@@ -67,9 +68,13 @@ export function renderCalendar(container, { year, month, todos, selectedDate, on
     if (date === today) button.classList.add("today");
     if (date === selectedDate) button.classList.add("selected");
     if ((firstDay + day - 1) % 7 === 0) button.classList.add("sun");
+    if (holiday) {
+      button.classList.add("holiday");
+      button.title = holiday;
+    }
     button.setAttribute("aria-pressed", String(date === selectedDate));
     button.setAttribute("aria-label",
-      `${month + 1}월 ${day}일` + (date === today ? ", 오늘" : "") + (count ? `, 마감 ${count}개` : ""));
+      `${month + 1}월 ${day}일` + (date === today ? ", 오늘" : "") + (holiday ? `, ${holiday}` : "") + (count ? `, 마감 ${count}개` : ""));
     if (date === today) button.setAttribute("aria-current", "date");
 
     const num = document.createElement("span");
@@ -88,6 +93,24 @@ export function renderCalendar(container, { year, month, todos, selectedDate, on
   }
 
   container.append(head, grid);
+
+  // 이번 달 공휴일 이름 (달력 칸이 작아서 아래에 따로)
+  const names = Object.entries(holidays)
+    .filter(([date]) => date.startsWith(dateStr(year, month, 1).slice(0, 8)))
+    .sort(([a], [b]) => a.localeCompare(b));
+  if (names.length) {
+    const list = document.createElement("ul");
+    list.className = "cal-holidays";
+    for (const [date, name] of names) {
+      const item = document.createElement("li");
+      const day = document.createElement("span");
+      day.className = "num";
+      day.textContent = `${month + 1}/${+date.slice(8)}`;
+      item.append(day, ` ${name}`);
+      list.append(item);
+    }
+    container.append(list);
+  }
 }
 
 function navButton(text, label, onClick, className = "") {
