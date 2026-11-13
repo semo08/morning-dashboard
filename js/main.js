@@ -36,6 +36,7 @@ let expanded = load("expandedFolders", topFolders(folders).map(f => f.id));
 const settings = { theme: "sunny", name: "", ...load("settings", {}) };
 let selectedFolder = "all";
 let editingFolders = false;
+let editingTodo = null;   // 고치는 중인 할 일 { id, field, level }
 let pickPath = [];          // 입력칸에서 고른 폴더 경로 [맨 위 id, 하위 id, ...]
 const calView = { year: new Date().getFullYear(), month: new Date().getMonth() };
 const deletedStack = [];    // Ctrl+Z 되돌리기용 { todo, index }
@@ -252,6 +253,20 @@ function renderMain() {
     todos,
     folders,
     selectedId: selectedFolder,
+    editing: editingTodo,
+    onEdit: next => {
+      editingTodo = next;
+      render();
+    },
+    // keep: 저장한 뒤에도 계속 고치는 중 (폴더 드롭다운을 한 단계씩 고를 때)
+    onUpdate: (id, changes, keep) => {
+      const todo = todos.find(t => t.id === id);
+      if (!todo) return;
+      Object.assign(todo, changes);
+      saveTodos();
+      if (keep) editingTodo = { id, ...keep };
+      render();
+    },
     onToggleDone: id => {
       const todo = todos.find(t => t.id === id);
       const prevDoneAt = todo.doneAt;
@@ -653,6 +668,14 @@ nameInput.addEventListener("input", () => {
 nameInput.addEventListener("keydown", e => {
   if (e.key === "Enter") nameInput.blur();
 });
+
+// 폴더를 고치는 중에 바깥을 누르면 닫는다.
+// capture 단계라서 다른 할 일의 태그를 누른 경우에도 그 태그의 클릭은 이어서 처리된다
+document.addEventListener("click", e => {
+  if (editingTodo?.field !== "folder" || e.target.closest(".todo-folder-edit")) return;
+  editingTodo = null;
+  render();
+}, true);
 
 document.addEventListener("keydown", e => {
   if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.shiftKey) return;

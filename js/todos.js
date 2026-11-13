@@ -1,5 +1,5 @@
-// 투두 추가/완료/삭제, 그룹 나누기
-import { folderColor, folderLabel, inFolder } from "./folders.js";
+// 투두 추가/완료/수정/삭제, 그룹 나누기
+import { folderColor, folderLabel, folderPath, inFolder, renderFolderPicker } from "./folders.js";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];   // Date.getDay() 순서
@@ -125,8 +125,10 @@ function compareTodos(a, b) {
   return a.id < b.id ? -1 : 1;
 }
 
-export function renderTodos(container, { todos, folders, selectedId, onToggleDone, onDelete }) {
+// editing: 고치는 중인 { id, field: "text" | "folder", level } (없으면 null)
+export function renderTodos(container, { todos, folders, selectedId, editing, onToggleDone, onDelete, onEdit, onUpdate }) {
   container.replaceChildren();
+  let toFocus = null;   // 다시 그린 뒤 포커스를 줄 칸
 
   const visible = todos.filter(t => inFolder(t, selectedId, folders) && isVisible(t));
 
@@ -159,6 +161,7 @@ export function renderTodos(container, { todos, folders, selectedId, onToggleDon
     section.append(list);
     container.append(section);
   }
+  toFocus?.focus();
 
   function todoItem(todo, groupId) {
     const li = document.createElement("li");
@@ -173,19 +176,68 @@ export function renderTodos(container, { todos, folders, selectedId, onToggleDon
     const body = document.createElement("div");
     body.className = "todo-body";
 
-    const text = document.createElement("span");
-    text.className = "todo-text";
-    text.textContent = todo.text;
+    const isEditing = field => editing?.id === todo.id && editing.field === field;
+
+    // 글자를 누르면 그 자리에서 고친다. Enter·바깥 클릭은 저장, Esc는 취소
+    let text;
+    if (isEditing("text")) {
+      text = document.createElement("input");
+      text.className = "todo-text-input";
+      text.value = todo.text;
+      text.maxLength = 200;
+      text.setAttribute("aria-label", "할 일 고치기");
+      let finished = false;
+      const finish = commit => {
+        if (finished) return;
+        finished = true;
+        const value = text.value.trim();
+        if (commit && value && value !== todo.text) onUpdate(todo.id, { text: value });
+        onEdit(null);
+      };
+      text.addEventListener("keydown", e => {
+        if (e.isComposing) return;   // 한글 조합 중 Enter는 무시
+        if (e.key === "Enter") finish(true);
+        if (e.key === "Escape") finish(false);
+      });
+      text.addEventListener("blur", () => finish(true));
+      toFocus = text;
+    } else {
+      text = document.createElement("button");
+      text.type = "button";
+      text.className = "todo-text";
+      text.textContent = todo.text;
+      text.title = "눌러서 고치기";
+      text.addEventListener("click", () => onEdit({ id: todo.id, field: "text" }));
+    }
 
     const meta = document.createElement("div");
     meta.className = "todo-meta";
 
+    // 폴더 태그를 누르면 그 자리에 폴더 드롭다운. 고르면 바로 저장되고, 바깥을 누르거나 Esc로 닫는다
     const color = folderColor(todo.folderId, folders);
     const label = folderLabel(todo.folderId, folders);
-    if (label) {
-      const tag = document.createElement("span");
+    if (isEditing("folder")) {
+      const picker = document.createElement("div");
+      picker.className = "folder-picker todo-folder-edit";
+      renderFolderPicker(picker, {
+        folders,
+        path: folderPath(folders, todo.folderId).map(f => f.id),
+        onChange: (path, level) => {
+          if (path.length) onUpdate(todo.id, { folderId: path.at(-1) }, { field: "folder", level });
+        },
+      });
+      picker.addEventListener("keydown", e => {
+        if (e.key === "Escape") onEdit(null);
+      });
+      meta.append(picker);
+      toFocus = picker.querySelectorAll("select")[editing.level ?? 0] ?? null;
+    } else if (label) {
+      const tag = document.createElement("button");
+      tag.type = "button";
       tag.className = `tag c-${color}`;
       tag.textContent = label;
+      tag.title = "눌러서 폴더 바꾸기";
+      tag.addEventListener("click", () => onEdit({ id: todo.id, field: "folder" }));
       meta.append(tag);
     }
     if (isRepeating(todo)) {
@@ -194,12 +246,38 @@ export function renderTodos(container, { todos, folders, selectedId, onToggleDon
       rep.textContent = `↻ ${repeatLabel(todo.repeat)}`;
       meta.append(rep);
     }
-    const due = dueLabel(todo);
-    if (due) {
-      const d = document.createElement("span");
-      d.className = "meta-due";
-      d.textContent = due;
-      meta.append(d);
+    // 마감일을 누르면 바로 날짜 고르기. 반복 할 일은 마감일이 없다
+    if (!isRepeating(todo)) {
+      const due = document.createElement("label");
+      due.className = "meta-due" + (todo.due ? "" : " meta-due-empty");
+      due.textContent = dueLabel(todo) || "+ 마감일";
+      const input = document.createElement("input");
+      input.type = "date";
+      input.className = "due-input";
+      input.value = todo.due ?? "";
+      input.setAttribute("aria-label", "마감일 바꾸기");
+      // 칸 어디를 눌러도 달력이 뜨게
+      const open = () => {
+        try {
+          input.showPicker();
+        } catch {
+          // 지원하지 않는 브라우저: 기본 동작에 맡긴다
+        }
+      };
+      input.addEventListener("click", e => {
+        e.preventDefault();
+        open();
+      });
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open();
+        }
+      });
+      // 달력의 '삭제'를 누르면 마감일 없음
+      input.addEventListener("change", () => onUpdate(todo.id, { due: input.value || null }));
+      due.append(input);
+      meta.append(due);
     }
 
     body.append(text, meta);
