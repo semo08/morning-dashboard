@@ -14,6 +14,7 @@ import { renderMemo } from "./memo.js";
 import { createDday, renderDdays } from "./dday.js";
 import { recordDone, renderGrass, seedHistory, streak } from "./history.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
+import { exportData, importData, readBackup } from "./backup.js";
 import { PHOTO_KEY, applyPhoto, removePhoto, renderPhotoPicker, resizePhoto, savePhoto } from "./background.js";
 
 let folders = load("folders", null) ?? DEFAULT_FOLDERS;
@@ -613,6 +614,29 @@ settingsToggle.addEventListener("click", () => {
   settingsToggle.setAttribute("aria-expanded", String(!settingsPanel.hidden));
 });
 
+$("export-btn").addEventListener("click", () => {
+  exportData();
+  showToast("파일로 내보냈어요");
+});
+
+const importInput = $("import-input");
+importInput.addEventListener("change", async () => {
+  const file = importInput.files[0];
+  importInput.value = "";   // 같은 파일을 다시 골라도 change가 오도록
+  if (!file) return;
+  try {
+    const backup = await readBackup(file);
+    if (!confirm("지금 데이터를 파일 내용으로 바꿀까요? 지금 있는 할 일과 설정은 사라져요.")) return;
+    importData(backup);
+  } catch (error) {
+    showToast(error.message);
+    return;
+  }
+  // 모든 상태를 처음부터 다시 읽도록 새로고침
+  sessionStorage.setItem("toast", "데이터를 가져왔어요");
+  location.reload();
+});
+
 nameInput.addEventListener("input", () => {
   settings.name = nameInput.value.trim();
   saveSettings();
@@ -644,4 +668,11 @@ nameInput.value = settings.name;
 renderSettings();
 renderRepeatDays();
 refreshDay();
+
+// 가져오기 뒤 새로고침했다면 결과를 알려준다
+const pendingToast = sessionStorage.getItem("toast");
+if (pendingToast) {
+  sessionStorage.removeItem("toast");
+  showToast(pendingToast);
+}
 startClock(updateHeader, refreshDay);

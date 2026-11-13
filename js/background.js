@@ -57,12 +57,12 @@ export function renderPhotoPicker(container, { url, on }) {
 
   // 파일 입력은 숨기고 label을 버튼처럼 쓴다
   const pick = document.createElement("label");
-  pick.className = "ghost-btn photo-pick";
+  pick.className = "ghost-btn file-pick";
   pick.textContent = url ? "다른 사진" : "사진 고르기";
   const input = document.createElement("input");
   input.type = "file";
   input.accept = "image/*";
-  input.className = "photo-input";
+  input.className = "file-input";
   input.addEventListener("change", () => {
     if (input.files[0]) on.pick(input.files[0]);
   });

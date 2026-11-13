@@ -406,9 +406,13 @@ h1, h2 { margin: 0; }
 }
 .photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 /* 파일 입력은 버튼 위에 투명하게 덮는다 (요일 칩과 같은 방식) */
-.photo-pick { position: relative; display: inline-flex; align-items: center; }
-.photo-input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.photo-pick:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
+.file-pick { position: relative; display: inline-flex; align-items: center; }
+.file-input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.file-pick:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.settings-data { flex: 1 1 260px; }
+.settings-hint { margin: -4px 0 12px; font-size: 13px; color: var(--muted); }
+.data-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .theme-list { display: flex; flex-wrap: wrap; gap: 12px; }
 
