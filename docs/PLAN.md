@@ -71,6 +71,7 @@ memo:     { text, writtenAt }
 ddays:    [{ id, title, date }]
 history:  { "2026-11-12": 3 }       // 날짜별 완료 개수
 settings: { theme: "sunny", name: "Sehwa" }
+background: "data:image/jpeg;base64,…" // 배경 사진 (긴 변 1920px로 줄인 JPEG)
 ```
 
 ---
@@ -195,7 +196,8 @@ function getGroup(todo) {
   "manifest_version": 3,
   "name": "Morning Dashboard",
   "version": "1.0",
-  "chrome_url_overrides": { "newtab": "index.html" }
+  "chrome_url_overrides": { "newtab": "index.html" },
+  "icons": { "16": "icons/icon-16.png", "128": "icons/icon-128.png" }
 }
 ```
 ### 설치 방법

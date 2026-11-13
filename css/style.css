@@ -246,6 +246,13 @@ body::before {
     linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 48%, var(--page) 100%);
 }
 
+/* 배경 사진을 고르면 하늘 대신 사진. 테마 색을 살짝 덮어 글자가 묻히지 않게 */
+[data-photo] body::before {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--page) 22%, transparent), color-mix(in srgb, var(--page) 38%, transparent)),
+    var(--photo) center / cover no-repeat;
+}
+
 button, input, select { font: inherit; color: inherit; }
 h1, h2 { margin: 0; }
 
@@ -382,6 +389,26 @@ h1, h2 { margin: 0; }
 .settings[hidden] { display: none; }
 .settings h2 { margin-bottom: 12px; font-size: 16px; }
 .settings-themes { flex: 2 1 420px; }
+.settings-photo { flex: 1 1 260px; }
+
+.photo-picker { display: flex; align-items: center; gap: 14px; }
+.photo-preview {
+  flex: none;
+  width: 120px;
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-mid)) center / cover;
+  font-size: 13px;
+  color: var(--muted);
+}
+.photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* 파일 입력은 버튼 위에 투명하게 덮는다 (요일 칩과 같은 방식) */
+.photo-pick { position: relative; display: inline-flex; align-items: center; }
+.photo-input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.photo-pick:focus-within { outline: 2px solid var(--text); outline-offset: 2px; }
 
 .theme-list { display: flex; flex-wrap: wrap; gap: 12px; }
 

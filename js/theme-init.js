@@ -5,3 +5,10 @@ try {
 } catch {
   // 저장된 값이 없거나 깨졌으면 기본 테마
 }
+
+// 배경 사진도 첫 화면부터 (main.js의 applyPhoto와 같은 방식)
+const photo = localStorage.getItem("background");
+if (photo) {
+  document.documentElement.style.setProperty("--photo", `url("${photo}")`);
+  document.documentElement.dataset.photo = "";
+}

@@ -14,6 +14,7 @@ import { renderMemo } from "./memo.js";
 import { createDday, renderDdays } from "./dday.js";
 import { recordDone, renderGrass, seedHistory, streak } from "./history.js";
 import { THEMES, applyTheme, renderThemePicker } from "./theme.js";
+import { PHOTO_KEY, applyPhoto, removePhoto, renderPhotoPicker, resizePhoto, savePhoto } from "./background.js";
 
 let folders = load("folders", null) ?? DEFAULT_FOLDERS;
 save("folders", folders);   // 처음 실행이면 기본 폴더를 넣어둔다
@@ -494,6 +495,33 @@ function renderSettings() {
     applyTheme(id);
     saveSettings();
     renderSettings();
+  });
+  renderPhotoPicker($("photo-picker"), {
+    url: localStorage.getItem(PHOTO_KEY),
+    on: {
+      async pick(file) {
+        let url;
+        try {
+          url = savePhoto(await resizePhoto(file));
+        } catch {
+          showToast("이 파일은 사진으로 열 수 없어요");
+          return;
+        }
+        if (!url) {
+          showToast("사진이 너무 커서 저장하지 못했어요");
+          return;
+        }
+        applyPhoto(url);
+        renderSettings();
+        showToast("배경 사진을 바꿨어요");
+      },
+      remove() {
+        removePhoto();
+        applyPhoto(null);
+        renderSettings();
+        showToast("기본 하늘로 돌아왔어요");
+      },
+    },
   });
 }
 
