@@ -611,7 +611,7 @@ h1, h2 { margin: 0; }
 .dialog-actions [hidden] { display: none; }
 
 /* ── 3단 레이아웃 ── */
-/* 왼쪽: 보드 + 폴더/할 일, 오른쪽: 달력·진행률·잔디 열 */
+/* 가운데: 잔디·폴더 | 보드·할 일, 오른쪽: 달력·진행률·연차 열 */
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -626,8 +626,8 @@ h1, h2 { margin: 0; }
   gap: 24px;
   align-items: start;
 }
-/* 왼쪽 좁은 열: 잔디 + 폴더 트리 */
-.left-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+/* 왼쪽 좁은 열: 잔디 + 폴더 트리, 넓은 열: 작업 보드 + 할 일 */
+.left-col, .right-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 
 /* ── 폴더 트리 ── */
 #folder-tree { padding: 20px 14px; }
@@ -1454,7 +1454,9 @@ button.tag:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text, 
   .clock { font-size: 44px; }
   .layout, .main { gap: 16px; }
   .columns { grid-template-columns: 1fr; gap: 16px; }
-  .left-col { gap: 16px; }
+  /* 한 줄일 땐 보드 → 잔디 → 폴더 → 할 일 순서로 */
+  .left-col, .right-col { display: contents; }
+  .board { order: -1; }
   .leave-fields, .dialog-row { grid-template-columns: 1fr; }
   #todo-panel { padding: 20px 16px; }
   .todo-delete, .meta-due-empty { opacity: 1; }
