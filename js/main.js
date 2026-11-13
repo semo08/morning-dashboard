@@ -48,7 +48,7 @@ let cardPickPath = [];
 let editingDdayId = null;
 let editingLeaveId = null;
 let grassWeeks = 18;
-let leaveListOpen = load("leaveListOpen", false);   // 연차 사용 내역 펼침
+let leaveListOpen = false;   // 연차 사용 내역: 열 때마다 접힌 채로 시작
 
 const $ = id => document.getElementById(id);
 const nav = $("folder-tree");
@@ -368,7 +368,6 @@ function renderLeaveCard() {
       setup: openLeaveSettings,
       toggleList: () => {
         leaveListOpen = !leaveListOpen;
-        save("leaveListOpen", leaveListOpen);
         renderLeaveCard();
         $("leave").querySelector(".leave-toggle").focus();
       },
