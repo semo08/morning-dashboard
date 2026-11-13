@@ -201,7 +201,7 @@ function renderTree(focusId) {
     on: {
       // 선택된 폴더를 다시 누르면 선택을 풀고 전체를 보여준다
       select: id => {
-        selectedFolder = selectedFolder === id ? "all" : id;
+        selectedFolder = id === "all" || selectedFolder === id ? "all" : id;
         // 하위 폴더가 있는 폴더를 고르면 펼쳐서 보여준다
         if (selectedFolder === id && childFolders(folders, id).length && !expanded.includes(id)) {
           expanded = [...expanded, id];

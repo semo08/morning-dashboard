@@ -191,6 +191,7 @@ export function renderFolderTree(nav, { folders, selectedId, expanded, editing, 
     addTop.addEventListener("click", () => on.add(null));
     nav.append(list, addTop);
   } else {
+    list.append(allItem());
     for (const top of topFolders(folders)) list.append(folderItem(top, 0));
     nav.append(list);
   }
@@ -201,6 +202,34 @@ export function renderFolderTree(nav, { folders, selectedId, expanded, editing, 
       input.focus();
       input.select();
     }
+  }
+
+  // 폴더를 고른 뒤에도 전체 목록으로 돌아올 수 있게 맨 위에 둔다
+  function allItem() {
+    const li = document.createElement("li");
+    const row = document.createElement("div");
+    row.className = "tree-row top" + (selectedId === "all" ? " selected" : "");
+
+    const spacer = document.createElement("span");
+    spacer.className = "tree-toggle hidden";
+    spacer.setAttribute("aria-hidden", "true");
+
+    const name = document.createElement("button");
+    name.type = "button";
+    name.className = "tree-name";
+    const label = document.createElement("span");
+    label.className = "tree-label";
+    label.textContent = "전체";
+    const count = document.createElement("span");
+    count.className = "tree-count num";
+    const n = countFor("all");
+    count.textContent = n > 0 ? n : "";
+    name.append(label, count);
+    name.addEventListener("click", () => on.select("all"));
+
+    row.append(spacer, name);
+    li.append(row);
+    return li;
   }
 
   function folderItem(folder, depth) {
